@@ -1,0 +1,1 @@
+import React from 'react';export default function Auth(){ return (<div style={{border:'1px dashed #ccc',padding:16}}>此處示意 Firebase Auth (email / Google)。替換 src/firebase.js 並實作登入流程。</div>) }
