@@ -141,7 +141,7 @@ const RegistrationForm = ({ switchToLogin }) => {
                 {/* 姓名欄位 */}
                 <div style={{ display: 'flex', gap: '15px' }}>
                     <div style={{ flex: 1 }}>
-                        <label style={labelStyle}>姓氏:</label>
+                        <label style={labelStyle}>姓氏 <span style={{color: COLOR_BRICK_RED}}>*</span>:</label>
                         <input 
                             type="text" 
                             name="last_name" 
@@ -154,7 +154,7 @@ const RegistrationForm = ({ switchToLogin }) => {
                         />
                     </div>
                     <div style={{ flex: 1 }}>
-                        <label style={labelStyle}>名字:</label>
+                        <label style={labelStyle}>名字 <span style={{color: COLOR_BRICK_RED}}>*</span>:</label>
                         <input 
                             type="text" 
                             name="first_name" 
@@ -176,7 +176,7 @@ const RegistrationForm = ({ switchToLogin }) => {
                     value={formData.nickname} 
                     onChange={handleChange} 
                     style={inputStyle} 
-                    placeholder="若不填，將顯示預設暱稱或學號" 
+                    placeholder="若不填，將顯示學號" 
                     onFocus={e => e.currentTarget.style.borderColor = COLOR_MORANDI_BROWN}
                     onBlur={e => e.currentTarget.style.borderColor = COLOR_LIGHT_BORDER}
                 />

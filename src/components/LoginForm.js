@@ -85,13 +85,13 @@ const LoginForm = ({ switchToRegister }) => {
             <form onSubmit={handleLogin}>
                 {/* 學號 or E-mail */}
                 <div style={{ marginBottom: '20px' }}>
-                    <label style={labelStyle}>學號或師大信箱:</label>
+                    <label style={labelStyle}>學號:</label>
                     <input 
                         type="text" 
                         value={username} 
                         onChange={(e) => setUsername(e.target.value)} 
                         style={inputStyle} 
-                        placeholder="請輸入學號或信箱" 
+                        placeholder="請輸入學號" 
                         required 
                         onFocus={e => e.currentTarget.style.borderColor = COLOR_MORANDI_BROWN} // Focus 莫蘭迪棕
                         onBlur={e => e.currentTarget.style.borderColor = COLOR_LIGHT_BORDER}
