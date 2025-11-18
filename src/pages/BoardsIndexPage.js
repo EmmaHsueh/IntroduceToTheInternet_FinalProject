@@ -1,4 +1,4 @@
-// src/pages/BoardsIndexPage.js
+// src/pages/BoardsIndexPage.js  看板(所有討論區)
 import React from 'react';
 import { Link } from 'react-router-dom'; // 導入 Link 組件
 import Header from '../components/Header';

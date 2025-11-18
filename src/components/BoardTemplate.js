@@ -2,6 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import Header from './Header';
 import BoardNav from './BoardNav';
+import PostDetailPage from "../pages/PostDetailPage";
 
 // ------------------------------------
 // 統一配色定義 (明亮活潑調整版)
@@ -278,6 +279,7 @@ const BoardTemplate = ({ boardName }) => {
     // 狀態管理 (不變)
     const [showChat, setShowChat] = useState(false);
     const [isPosting, setIsPosting] = useState(false); 
+    const [selectedPost, setSelectedPost] = useState(null);
 
     const [chatMessages, setChatMessages] = useState([
         { content: `歡迎來到【${boardName}】即時聊天室！`, sender: 'System', time: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }) },
@@ -302,7 +304,7 @@ const BoardTemplate = ({ boardName }) => {
     };
 
     const handlePostClick = (post) => {
-        alert(`您點擊了貼文：${post.title}，這裡應該導向貼文詳情頁。`);
+        setSelectedPost(post);
     };
 
     // 調整功能按鈕樣式
@@ -333,7 +335,6 @@ const BoardTemplate = ({ boardName }) => {
             <Header /> 
             <main style={{ maxWidth: '900px', margin: '20px auto', padding: '0 20px', backgroundColor: COLOR_BACKGROUND_LIGHT }}>
 
-                {/* 假設 BoardNav 已被引入並使用統一風格 */}
                 <BoardNav />
 
                 <div style={{ 
@@ -344,71 +345,101 @@ const BoardTemplate = ({ boardName }) => {
                     backgroundColor: COLOR_BACKGROUND_LIGHT, 
                     boxShadow: '0 4px 15px rgba(0,0,0,0.05)' 
                 }}>
-                    
-                    <h2 style={{ 
-                        borderBottom: `2px solid ${COLOR_HIGHLIGHT_LINE}`, 
-                        color: COLOR_DEEP_NAVY, 
-                        paddingBottom: '15px', 
-                        marginBottom: '30px', 
-                        marginTop: '0', 
-                        fontWeight: '400' 
-                    }}>
-                        【{boardName}】 看板討論區
-                    </h2>
 
-                    {/* 功能按鈕區塊 */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                        <div>
-                            <button 
-                                onClick={() => setIsPosting(true)}
-                                style={POST_BUTTON_STYLE}
-                                onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_OLIVE_GREEN} // Hover 深橄欖綠
-                                onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_BRICK_RED}
-                            >
-                                + 發表新貼文
-                            </button>
-                        </div>
-                        <div>
-                            <button
-                                onClick={() => setShowChat(true)}
-                                style={CHAT_ICON_BUTTON_STYLE}
-                                title="開啟即時聊天室"
-                                onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_OLIVE_GREEN} // Hover 深橄欖綠
-                                onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN}
-                            >
-                                💬 即時聊天室 ({chatMessages.length})
-                            </button>
-                        </div>
-                    </div>
-                    
-                    {/* 內容區塊 */}
-                    {isPosting ? (
-                        <PostForm 
-                            boardName={boardName}
-                            onSubmit={handleNewPostSubmit} 
-                            onCancel={() => setIsPosting(false)} 
+                    {selectedPost ? (
+                        /* 🔸 顯示貼文詳情頁 */
+                        <PostDetailPage 
+                            post={selectedPost}
+                            onBack={() => setSelectedPost(null)}
+                            onAddComment={(postId, content) => {
+                                setPosts(prev =>
+                                    prev.map(p =>
+                                        p.id === postId
+                                            ? { 
+                                                ...p, 
+                                                commentCount: p.commentCount + 1,
+                                                comments: [
+                                                    ...(p.comments || []),
+                                                    {
+                                                        id: Date.now(),
+                                                        author: "當前用戶(您)",
+                                                        content,
+                                                        date: new Date().toLocaleString("zh-TW")
+                                                    }
+                                                ]
+                                            }
+                                            : p
+                                    )
+                                );
+                            }}
                         />
                     ) : (
+                        /* 🔸 顯示原本看板內容 */
                         <>
-                            {/* 貼文列表 */}
-                            <h3 style={{ 
-                                borderLeft: `5px solid ${COLOR_HIGHLIGHT_LINE}`, 
+                            <h2 style={{ 
+                                borderBottom: `2px solid ${COLOR_HIGHLIGHT_LINE}`, 
                                 color: COLOR_DEEP_NAVY, 
-                                paddingLeft: '15px', 
-                                marginBottom: '20px', 
-                                fontWeight: '500' 
-                            }}>最新文章</h3>
-                            <div className="posts-list" style={{ marginBottom: '20px' }}>
-                                {posts.map(post => (
-                                    <Post key={post.id} post={post} onClick={() => handlePostClick(post)} />
-                                ))}
-                                {posts.length === 0 && <div style={{ textAlign: 'center', color: COLOR_SECONDARY_TEXT, padding: '20px' }}>看板目前沒有文章。</div>}
+                                paddingBottom: '15px', 
+                                marginBottom: '30px', 
+                                marginTop: '0', 
+                                fontWeight: '400' 
+                            }}>
+                                【{boardName}】 看板討論區
+                            </h2>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+                                <button 
+                                    onClick={() => setIsPosting(true)}
+                                    style={POST_BUTTON_STYLE}
+                                    onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_OLIVE_GREEN}
+                                    onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_BRICK_RED}
+                                >
+                                    + 發表新貼文
+                                </button>
+
+                                <button
+                                    onClick={() => setShowChat(true)}
+                                    style={CHAT_ICON_BUTTON_STYLE}
+                                    title="開啟即時聊天室"
+                                    onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_OLIVE_GREEN}
+                                    onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN}
+                                >
+                                    💬 即時聊天室 ({chatMessages.length})
+                                </button>
                             </div>
+
+                            {isPosting ? (
+                                <PostForm 
+                                    boardName={boardName}
+                                    onSubmit={handleNewPostSubmit} 
+                                    onCancel={() => setIsPosting(false)} 
+                                />
+                            ) : (
+                                <>
+                                    <h3 style={{ 
+                                        borderLeft: `5px solid ${COLOR_HIGHLIGHT_LINE}`, 
+                                        color: COLOR_DEEP_NAVY, 
+                                        paddingLeft: '15px', 
+                                        marginBottom: '20px', 
+                                        fontWeight: '500' 
+                                    }}>最新文章</h3>
+
+                                    <div className="posts-list" style={{ marginBottom: '20px' }}>
+                                        {posts.map(post => (
+                                            <Post key={post.id} post={post} onClick={() => setSelectedPost(post)} />
+                                        ))}
+                                        {posts.length === 0 && (
+                                            <div style={{ textAlign: 'center', color: COLOR_SECONDARY_TEXT, padding: '20px' }}>
+                                                看板目前沒有文章。
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
                         </>
                     )}
                 </div>
 
-                {/* 聊天室組件 */}
                 {showChat && 
                     <ChatWidget 
                         onClose={() => setShowChat(false)} 
@@ -421,5 +452,4 @@ const BoardTemplate = ({ boardName }) => {
         </>
     );
 };
- 
 export default BoardTemplate;
