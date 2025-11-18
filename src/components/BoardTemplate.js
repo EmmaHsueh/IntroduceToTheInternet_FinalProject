@@ -1,11 +1,13 @@
-// src/components/BoardTemplate.js (只顯示修改後的 ChatWidget 部分)
-import React, { useState, useCallback } from 'react';
-import Header from './Header';
-import BoardNav from './BoardNav';
+// src/components/BoardTemplate.js
+import React, { useState, useCallback, useEffect } from 'react'; // 🏆 修正: 導入 useEffect
+import Header from './Header'; // 假設 Header 存在
+import BoardNav from './BoardNav'; // 假設 BoardNav 存在
 import PostDetailPage from "../pages/PostDetailPage";
+import PostForm from './PostForm'; 
+
 
 // ------------------------------------
-// 統一配色定義 (明亮活潑調整版)
+// 統一配色定義
 // ------------------------------------
 const COLOR_DEEP_NAVY = '#1e2a38';     // 深藍/黑 - 主要文字 (代替 COLOR_PRIMARY_TEXT)
 const COLOR_OLIVE_GREEN = '#454f3b';   // 深橄欖綠 - 次要強調/Hover
@@ -18,20 +20,28 @@ const COLOR_BACKGROUND_LIGHT = '#ffffff';
 const COLOR_BORDER = '#dddddd';
 const COLOR_HIGHLIGHT_LINE = COLOR_MORANDI_BROWN; // 使用莫蘭迪棕作為強調線
 
+
+// 初始貼文數據 (已包含 imageUrls 陣列)
+// 我們將不再依賴這組數據作為預設狀態，而是用於參考。
+const initialPosts = [
+    { id: 101, title: `【公告】看板使用規範`, content: '請大家遵守社群守則，共同維護看板秩序。', author: '管理員', date: '2025-11-01', commentCount: 5, imageUrls: ['https://picsum.photos/60/60?random=1'], comments: [] },
+    { id: 102, title: `熱門討論：最新趨勢是什麼？`, content: '最近大家都在討論什麼呢？有沒有什麼新的發現可以分享？', author: `看板用戶-Z`, date: '2025-11-12', commentCount: 12, imageUrls: [], comments: [] },
+];
+
 // ------------------------------------
-// 輔助組件 (Comment) - 樣式優化 (沿用舊版，調整顏色名稱)
+// 輔助組件 (Comment) - 樣式優化 (保持不變)
 // ------------------------------------
 const Comment = ({ comment }) => (
     <div style={{ display: 'flex', padding: '15px 0', borderBottom: `1px dashed ${COLOR_BORDER}`, alignItems: 'flex-start' }}>
         {/* 頭像 */}
         <div style={{ width: '40px', marginRight: '15px', flexShrink: 0 }}>
             <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: COLOR_BORDER, display: 'flex', justifyContent: 'center', alignItems: 'center', color: COLOR_SECONDARY_TEXT, fontWeight: 'bold' }}>
-                {comment.authorName.charAt(0)}
+                {comment.author.charAt(0)}
             </div>
         </div>
         {/* 內容 */}
         <div style={{ flexGrow: 1 }}>
-            <div style={{ fontWeight: '600', fontSize: 'small', color: COLOR_DEEP_NAVY }}>{comment.authorName}</div>
+            <div style={{ fontWeight: '600', fontSize: 'small', color: COLOR_DEEP_NAVY }}>{comment.author}</div>
             <div style={{ fontSize: 'x-small', color: COLOR_SECONDARY_TEXT, marginBottom: '5px' }}>
                 <time>{comment.date}</time>
                 <span style={{ marginLeft: '10px', cursor: 'pointer', transition: 'color 0.3s' }} 
@@ -50,7 +60,7 @@ const Comment = ({ comment }) => (
 
 
 // ------------------------------------
-// 輔助組件 (ChatWidget) - 核心修改部分
+// 輔助組件 (ChatWidget) (保持不變)
 // ------------------------------------
 const ChatWidget = ({ onClose, boardName, messages, onSendMessage }) => {
     const [input, setInput] = useState(''); 
@@ -61,10 +71,9 @@ const ChatWidget = ({ onClose, boardName, messages, onSendMessage }) => {
         }
     };
     
-    // 聊天室按鈕樣式 (使用莫蘭迪棕)
     const CHAT_BUTTON_STYLE = {
         padding: '8px 15px', 
-        backgroundColor: COLOR_MORANDI_BROWN, // **主色：莫蘭迪棕**
+        backgroundColor: COLOR_MORANDI_BROWN, 
         color: 'white', 
         border: 'none', 
         borderRadius: '6px', 
@@ -91,7 +100,7 @@ const ChatWidget = ({ onClose, boardName, messages, onSendMessage }) => {
             {/* 標題欄 */}
             <div style={{ 
                 padding: '12px 15px', 
-                backgroundColor: COLOR_MORANDI_BROWN, // **標題背景：莫蘭迪棕**
+                backgroundColor: COLOR_MORANDI_BROWN, 
                 color: 'white', 
                 display: 'flex', 
                 justifyContent: 'space-between', 
@@ -110,7 +119,7 @@ const ChatWidget = ({ onClose, boardName, messages, onSendMessage }) => {
                 flexGrow: 1, 
                 padding: '10px 15px', 
                 overflowY: 'auto', 
-                backgroundColor: COLOR_OFF_WHITE, // **淺色背景：米黃/淺色**
+                backgroundColor: COLOR_OFF_WHITE, 
                 display: 'flex', 
                 flexDirection: 'column-reverse' 
             }}>
@@ -119,9 +128,8 @@ const ChatWidget = ({ onClose, boardName, messages, onSendMessage }) => {
                         <span style={{ 
                             padding: '8px 12px', 
                             borderRadius: '18px', 
-                            // 用戶氣泡使用莫蘭迪棕
                             backgroundColor: msg.sender === 'User' ? COLOR_MORANDI_BROWN : COLOR_BORDER, 
-                            color: msg.sender === 'User' ? 'white' : COLOR_DEEP_NAVY, // 系統氣泡文字使用深色
+                            color: msg.sender === 'User' ? 'white' : COLOR_DEEP_NAVY, 
                             display: 'inline-block', 
                             maxWidth: '80%',
                             boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
@@ -151,7 +159,7 @@ const ChatWidget = ({ onClose, boardName, messages, onSendMessage }) => {
                 <button 
                     onClick={handleSend} 
                     style={CHAT_BUTTON_STYLE}
-                    onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_OLIVE_GREEN} // **Hover：深橄欖綠**
+                    onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_OLIVE_GREEN} 
                     onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN}
                 >
                     發送
@@ -163,124 +171,78 @@ const ChatWidget = ({ onClose, boardName, messages, onSendMessage }) => {
 
 
 // ------------------------------------
-// 其他組件 (Post, PostForm, BoardTemplate) - 使用新顏色定義
+// 輔助組件 (Post) - 調整為顯示第一張圖 (保持不變)
 // ------------------------------------
-
 const Post = ({ post, onClick }) => (
     <div 
-        onClick={onClick}
-        style={{ 
-            border: `1px solid ${COLOR_BORDER}`, 
-            padding: '18px', 
-            borderRadius: '8px', 
-            marginBottom: '15px',
-            backgroundColor: COLOR_BACKGROUND_LIGHT,
-            cursor: 'pointer',
-            transition: 'box-shadow 0.3s',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-        }}
-        onMouseOver={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'}
-        onMouseOut={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)'}
-    >
-        <h4 style={{ margin: '0 0 8px 0', color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{post.title}</h4>
-        <div style={{ fontSize: 'small', color: COLOR_SECONDARY_TEXT, marginBottom: '5px' }}>
-            作者: **{post.author}** | 發表於: {post.date} | 留言: <span style={{ color: COLOR_MORANDI_BROWN, fontWeight: 'bold' }}>{post.commentCount}</span>
-        </div>
-        <p style={{ margin: '0', fontSize: 'small', color: COLOR_SECONDARY_TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {post.content.substring(0, 100)}...
-        </p>
-    </div>
+		onClick={onClick}
+		style={{ 
+			border: `1px solid ${COLOR_BORDER}`, 
+			padding: '18px', 
+			borderRadius: '8px', 
+			marginBottom: '15px',
+			backgroundColor: COLOR_BACKGROUND_LIGHT,
+			cursor: 'pointer',
+			transition: 'box-shadow 0.3s',
+			boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+		}}
+		onMouseOver={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'}
+		onMouseOut={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)'}
+	>
+		<div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+			{/* 貼文預覽圖：只顯示第一張圖 */}
+			{post.imageUrls && post.imageUrls.length > 0 && (
+				<img 
+					src={post.imageUrls[0]} // 顯示陣列中的第一張圖
+					alt="貼文圖片預覽" 
+					style={{ width: '60px', height: '60px', flexShrink: 0, borderRadius: '4px', objectFit: 'cover', border: `1px solid ${COLOR_BORDER}` }}
+				/>
+			)}
+			<div>
+				<h4 style={{ margin: '0 0 8px 0', color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{post.title}</h4>
+				<div style={{ fontSize: 'small', color: COLOR_SECONDARY_TEXT, marginBottom: '5px' }}>
+					作者: **{post.author}** | 發表於: {post.date} | 留言: <span style={{ color: COLOR_MORANDI_BROWN, fontWeight: 'bold' }}>{post.commentCount}</span>
+				</div>
+				<p style={{ margin: '0', fontSize: 'small', color: COLOR_SECONDARY_TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+					{post.content.substring(0, 100)}...
+				</p>
+			</div>
+		</div>
+	</div>
 );
 
-const PostForm = ({ boardName, onSubmit, onCancel }) => {
-    const [title, setTitle] = useState('');
-    const [content, setContent] = useState('');
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (title.trim() && content.trim()) {
-            onSubmit(title, content);
-        } else {
-            alert('標題和內容都不能為空！');
-        }
-    };
-
-    const BUTTON_PRIMARY_STYLE = { 
-        padding: '10px 25px', 
-        backgroundColor: COLOR_BRICK_RED, // 主按鈕使用磚紅
-        color: 'white', 
-        border: 'none', 
-        borderRadius: '6px', 
-        cursor: 'pointer', 
-        fontWeight: 'bold',
-        transition: 'background-color 0.3s'
-    };
-    const BUTTON_SECONDARY_STYLE = { 
-        padding: '10px 25px', 
-        backgroundColor: COLOR_SECONDARY_TEXT, 
-        color: 'white', 
-        border: 'none', 
-        borderRadius: '6px', 
-        cursor: 'pointer', 
-        transition: 'background-color 0.3s'
-    };
-
-    return (
-        <div style={{ border: `1px solid ${COLOR_BORDER}`, padding: '30px', borderRadius: '10px', backgroundColor: COLOR_OFF_WHITE }}>
-            <h2 style={{ color: COLOR_DEEP_NAVY, borderBottom: `2px solid ${COLOR_HIGHLIGHT_LINE}`, paddingBottom: '15px', marginBottom: '25px', marginTop: '0', fontWeight: '500' }}>
-                發表新貼文到 【{boardName}】
-            </h2>
-            <form onSubmit={handleSubmit}>
-                <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: COLOR_DEEP_NAVY }}>標題：</label>
-                    <input
-                        type="text"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        style={{ width: '100%', padding: '12px', boxSizing: 'border-box', border: `1px solid ${COLOR_BORDER}`, borderRadius: '6px', outline: 'none' }}
-                        placeholder="請輸入貼文標題"
-                    />
-                </div>
-                <div style={{ marginBottom: '30px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: COLOR_DEEP_NAVY }}>內容：</label>
-                    <textarea
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        style={{ width: '100%', height: '200px', padding: '12px', boxSizing: 'border-box', border: `1px solid ${COLOR_BORDER}`, borderRadius: '6px', resize: 'vertical', outline: 'none' }}
-                        placeholder="請詳細描述您的貼文內容..."
-                    />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
-                    <button 
-                        type="button" 
-                        onClick={onCancel} 
-                        style={BUTTON_SECONDARY_STYLE}
-                        onMouseOver={e => e.currentTarget.style.backgroundColor = '#888'}
-                        onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_SECONDARY_TEXT}
-                    >
-                        取消
-                    </button>
-                    <button 
-                        type="submit" 
-                        style={BUTTON_PRIMARY_STYLE}
-                        onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN} // Hover 莫蘭迪棕
-                        onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_BRICK_RED}
-                    >
-                        送出貼文
-                    </button>
-                </div>
-            </form>
-        </div>
-    );
-};
-
-
+// ------------------------------------
+// 主要組件 (BoardTemplate) - 修正 Persistence 邏輯，實現看板隔離
+// ------------------------------------
 const BoardTemplate = ({ boardName }) => {
-    // 狀態管理 (不變)
+    // 🏆 修正 1: 初始化 posts 狀態為空陣列
+    const [posts, setPosts] = useState([]); 
+
     const [showChat, setShowChat] = useState(false);
     const [isPosting, setIsPosting] = useState(false); 
     const [selectedPost, setSelectedPost] = useState(null);
 
+    // 🏆 修正 2: 監聽 boardName 變化，並從 board-specific localStorage 讀取該看板的貼文
+    useEffect(() => {
+        const localStorageKey = `boardPosts_${boardName}`;
+        const savedPosts = localStorage.getItem(localStorageKey);
+        
+        if (savedPosts) {
+            setPosts(JSON.parse(savedPosts));
+        } else {
+            // 如果該看板沒有儲存數據，讓它從空開始，實現看板隔離
+            setPosts([]); 
+        }
+    }, [boardName]); // 當 boardName 改變時觸發
+
+    // 🏆 修正 3: 監聽 posts 狀態變化，並儲存到 board-specific localStorage key
+    useEffect(() => {
+        const localStorageKey = `boardPosts_${boardName}`;
+        localStorage.setItem(localStorageKey, JSON.stringify(posts));
+    }, [posts, boardName]); // 依賴項加入 boardName，確保儲存到正確的位置
+
+    // 聊天室邏輯 (略)
     const [chatMessages, setChatMessages] = useState([
         { content: `歡迎來到【${boardName}】即時聊天室！`, sender: 'System', time: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }) },
     ]);
@@ -290,27 +252,33 @@ const BoardTemplate = ({ boardName }) => {
             { content: content, sender: 'User', time: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }) }
         ]);
     }, []);
-    
-    const [posts, setPosts] = useState([
-        { id: 101, title: `【公告】${boardName} 看板使用規範`, content: '請大家遵守社群守則，共同維護看板秩序。', author: '管理員', date: '2025-11-01', commentCount: 5 },
-        { id: 102, title: `熱門討論：${boardName} 的最新趨勢是什麼？`, content: '最近大家都在討論什麼呢？有沒有什麼新的發現可以分享？', author: `看板用戶-Z`, date: '2025-11-12', commentCount: 12 },
-    ]);
 
-    const handleNewPostSubmit = (title, content) => {
-        const newPost = { id: Date.now(), title, content, author: '當前用戶 (您)', date: new Date().toLocaleDateString('zh-TW'), commentCount: 0 };
+    // 修正：現在接受 imageUrls 陣列參數並儲存 (保持不變)
+    const handleNewPostSubmit = (title, content, imageUrls) => {
+        const newPost = { 
+            id: Date.now(), 
+            title, 
+            content, 
+            author: '當前用戶 (您)', 
+            date: new Date().toLocaleDateString('zh-TW'), 
+            commentCount: 0,
+            imageUrls: imageUrls || [], // 儲存圖片 URL 陣列
+            comments: [] // 新貼文沒有留言
+        };
         setPosts(prevPosts => [newPost, ...prevPosts]); 
         setIsPosting(false);
-        alert('新貼文已成功發表！');
+        // 為了避免 alert 阻礙流程，這裡使用 console.log 或忽略
+        console.log('新貼文已成功發表！' + (imageUrls.length > 0 ? ` (包含 ${imageUrls.length} 張圖片)` : ''));
     };
 
     const handlePostClick = (post) => {
         setSelectedPost(post);
     };
 
-    // 調整功能按鈕樣式
+    // 按鈕樣式 (保持不變)
     const POST_BUTTON_STYLE = { 
         padding: '12px 25px', 
-        backgroundColor: COLOR_BRICK_RED, // 發表按鈕使用磚紅
+        backgroundColor: COLOR_BRICK_RED, 
         color: 'white', 
         border: 'none', 
         borderRadius: '6px', 
@@ -320,7 +288,7 @@ const BoardTemplate = ({ boardName }) => {
     };
     const CHAT_ICON_BUTTON_STYLE = { 
         padding: '12px 25px', 
-        backgroundColor: COLOR_MORANDI_BROWN, // 即時聊天室使用莫蘭迪棕
+        backgroundColor: COLOR_MORANDI_BROWN, 
         color: 'white', 
         border: 'none', 
         borderRadius: '6px', 
@@ -352,25 +320,35 @@ const BoardTemplate = ({ boardName }) => {
                             post={selectedPost}
                             onBack={() => setSelectedPost(null)}
                             onAddComment={(postId, content) => {
-                                setPosts(prev =>
-                                    prev.map(p =>
+                                const newComment = {
+                                    id: Date.now(),
+                                    author: "當前用戶(您)",
+                                    content,
+                                    date: new Date().toLocaleString("zh-TW")
+                                };
+
+                                setPosts(prev => {
+                                    const updatedPosts = prev.map(p =>
                                         p.id === postId
                                             ? { 
                                                 ...p, 
                                                 commentCount: p.commentCount + 1,
                                                 comments: [
                                                     ...(p.comments || []),
-                                                    {
-                                                        id: Date.now(),
-                                                        author: "當前用戶(您)",
-                                                        content,
-                                                        date: new Date().toLocaleString("zh-TW")
-                                                    }
+                                                    newComment
                                                 ]
                                             }
                                             : p
-                                    )
-                                );
+                                    );
+                                    
+                                    // 確保 PostDetailPage 立即更新 (如果 PostDetailPage 依賴 props 並且已經實作)
+                                    const updatedPost = updatedPosts.find(p => p.id === postId);
+                                    if (updatedPost) {
+                                        setSelectedPost(updatedPost); 
+                                    }
+                                    
+                                    return updatedPosts;
+                                });
                             }}
                         />
                     ) : (
@@ -411,7 +389,7 @@ const BoardTemplate = ({ boardName }) => {
                             {isPosting ? (
                                 <PostForm 
                                     boardName={boardName}
-                                    onSubmit={handleNewPostSubmit} 
+                                    onSubmit={handleNewPostSubmit} // 傳遞新的 onSubmit
                                     onCancel={() => setIsPosting(false)} 
                                 />
                             ) : (
