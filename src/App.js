@@ -1,4 +1,3 @@
-
 // src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -9,6 +8,8 @@ import MediaPage from './pages/MediaPage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import BoardsIndexPage from './pages/BoardsIndexPage';
+import ProfilePage from './pages/ProfilePage'; // 🎯 新增：個人資料顯示頁面
+import ProfileEditPage from './pages/ProfileEditPage'; // 🎯 新增：個人資料編輯頁面
 
 // 引入看板頁面組件
 import FoodBoardPage from './pages/FoodBoardPage';
@@ -37,6 +38,13 @@ function App() {
         {/* 會員目錄頁面路由 */}
         <Route path="/members" element={<MemberPage />} />
         
+        {/* 🎯 會員個人檔案頁面路由 */
+        /* /profile 顯示個人資料 */
+        /* /profile/edit 編輯個人資料 */
+        }
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile/edit" element={<ProfileEditPage />} />
+        
         {/* 看板導覽頁 */}
         <Route path="/boards" element={<BoardsIndexPage />} />
         
@@ -61,15 +69,8 @@ function App() {
         <Route path="/boards/:boardId/:postId" element={<PostDetailPage />} />
         
         {/* 媒體資源頁面路由 */}
-        <Route path="/media-assets" element={<MediaPage />} />
-
-        {/* 404 頁面（選用） */}
-        <Route path="*" element={
-            <div style={{ padding: '50px', textAlign: 'center' }}>
-                <h1>404 Not Found</h1>
-                <p>找不到該頁面。</p>
-            </div>
-        } />
+        <Route path="/media" element={<MediaPage />} />
+        
       </Routes>
     </Router>
   );

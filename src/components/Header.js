@@ -92,8 +92,8 @@ const Header = () => {
                 {/* 導覽菜單 */}
                 <nav>
                     <ul style={{ display: 'flex', listStyle: 'none', margin: 0, padding: 0 }}>
-                        {['首頁', '看板', '會員名錄', '登入/註冊'].map((text, index) => {
-                            const paths = ['/', '/boards', '/members', '/login'];
+                        {['首頁', '看板', '會員名錄','關於我', '登入/註冊'].map((text, index) => {
+                            const paths = ['/', '/boards', '/members','/profile', '/login'];
                             return (
                                 <li key={text} style={navItemStyle}>
                                     <Link 
