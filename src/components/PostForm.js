@@ -226,22 +226,37 @@ const navigate = useNavigate(); // 🎯 獲取 navigate 函數
         });
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (title.trim() && content.trim()) {
-            // 傳遞最終的 URL 陣列 (包含去背或原始圖片的 URL)
-            const finalImageUrls = images.map(img => img.url);
-            onSubmit(title, content, finalImageUrls); 
-            
-            // 重置所有狀態
-            setTitle('');
-            setContent('');
-            setImages([]);
-            setGlobalMessage('');
-        } else {
-            setGlobalMessage('標題和內容都不能為空！');
+
+        if (!title.trim() || !content.trim()) {
+            alert('標題和內容都不能為空！');
+            return;
+        }
+
+        try {
+            const response = await fetch('http://localhost:3001/moderation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: `${title}\n${content}` }),
+            });
+
+            const result = await response.json();
+
+            if (result.flagged) {
+                alert("❌ 貼文內容可能不適當，請修改後再發佈。");
+                return;
+            }
+
+            // 安全 → 繼續發文
+            onSubmit(title, content, images.map(img => img.url));
+
+        } catch (error) {
+            console.error('Moderation error:', error);
+            alert('無法檢查貼文內容，請稍後再試');
         }
     };
+
 
     return (
         <div style={{ border: `1px solid ${COLOR_BORDER}`, padding: '30px', borderRadius: '10px', backgroundColor: COLOR_OFF_WHITE }}>
