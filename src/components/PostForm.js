@@ -238,7 +238,7 @@ const navigate = useNavigate(); // 🎯 獲取 navigate 函數
             const response = await fetch('http://localhost:3001/moderation', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: `${title}\n${content}` }),
+                body: JSON.stringify({ content: `${title}\n${content}` }),
             });
 
             const result = await response.json();
