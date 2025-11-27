@@ -2,14 +2,17 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
+// 🔥 引入 AuthProvider
+import { AuthProvider } from './contexts/AuthContext';
+
 // 引入基本頁面組件
 import MemberPage from './pages/MemberPage';
 import MediaPage from './pages/MediaPage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import BoardsIndexPage from './pages/BoardsIndexPage';
-import ProfilePage from './pages/ProfilePage'; // 🎯 新增：個人資料顯示頁面
-import ProfileEditPage from './pages/ProfileEditPage'; // 🎯 新增：個人資料編輯頁面
+import ProfilePage from './pages/ProfilePage';
+import ProfileEditPage from './pages/ProfileEditPage';
 
 // 引入看板頁面組件
 import FoodBoardPage from './pages/FoodBoardPage';
@@ -20,14 +23,15 @@ import CoursesBoardPage from './pages/CoursesBoardPage';
 import OutfitBoardPage from './pages/OutfitBoardPage';
 import OtherBoardPage from './pages/OtherBoardPage';
 
-// *** 新增：引入貼文相關組件 ***
-import PostForm from './components/PostForm'; // 假設 PostForm 是 components 級別
-import PostDetailPage from './pages/PostDetailPage'; // 假設 PostDetailPage 是 pages 級別
+// 引入貼文相關組件
+import PostForm from './components/PostForm';
+import PostDetailPage from './pages/PostDetailPage';
 
 
 function App() {
   return (
-    <Router>
+    <AuthProvider>
+      <Router>
       <Routes>
         {/* 首頁 */}
         <Route path="/" element={<HomePage />} />
@@ -70,9 +74,10 @@ function App() {
         
         {/* 媒體資源頁面路由 */}
         <Route path="/media" element={<MediaPage />} />
-        
+
       </Routes>
     </Router>
+    </AuthProvider>
   );
 }
 

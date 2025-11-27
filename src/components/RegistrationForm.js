@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 // ------------------------------------
 // 統一配色定義 (淺色活潑大學風格)
@@ -36,6 +38,11 @@ const RegistrationForm = ({ switchToLogin }) => {
     // 新增狀態來儲存自訂圖片的本地 URL，用於即時預覽
     const [customAvatarUrl, setCustomAvatarUrl] = useState(null);
     const [registrationStatus, setRegistrationStatus] = useState(''); // 用於取代 alert
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const { signup } = useAuth();
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -69,11 +76,51 @@ const RegistrationForm = ({ switchToLogin }) => {
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // TODO: 串接註冊 API
-        console.log('註冊表單提交:', formData);
-        setRegistrationStatus('註冊功能待串接 API。已提交資料至 Console。');
+        setError('');
+        setRegistrationStatus('');
+        setLoading(true);
+
+        // 驗證密碼長度
+        if (formData.user_password.length < 6) {
+            setError('密碼至少需要 6 個字元');
+            setLoading(false);
+            return;
+        }
+
+        try {
+            // 註冊用戶
+            await signup(formData.user_email, formData.user_password, {
+                user_login: formData.user_login,
+                nickname: formData.nickname || formData.user_login,
+                first_name: formData.first_name,
+                last_name: formData.last_name,
+                gender: formData.gender || '保密',
+                avatar: formData.avatar_url,
+                bio: '這個人很懶，什麼都沒留下。'
+            });
+
+            setRegistrationStatus('註冊成功！即將跳轉至首頁...');
+            setTimeout(() => {
+                navigate('/');
+            }, 1500);
+        } catch (error) {
+            console.error('註冊錯誤:', error);
+
+            // 顯示友善的錯誤訊息
+            if (error.code === 'auth/email-already-in-use') {
+                setError('此 Email 已被註冊');
+            } else if (error.code === 'auth/invalid-email') {
+                setError('Email 格式不正確');
+            } else if (error.code === 'auth/weak-password') {
+                setError('密碼強度不足');
+            } else {
+                setError('註冊失敗：' + error.message);
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
     // ------------------------------------
@@ -201,7 +248,22 @@ const RegistrationForm = ({ switchToLogin }) => {
             </h3>
             
             <form onSubmit={handleSubmit}>
-                
+
+                {/* 錯誤訊息 */}
+                {error && (
+                    <div style={{
+                        backgroundColor: '#fee',
+                        color: COLOR_BRICK_RED,
+                        padding: '12px',
+                        borderRadius: '6px',
+                        marginBottom: '20px',
+                        fontSize: '14px',
+                        border: `1px solid ${COLOR_BRICK_RED}`
+                    }}>
+                        ⚠️ {error}
+                    </div>
+                )}
+
                 {/* ------------------------------------ */}
                 {/* 獨立頭像預覽區塊 (新增) */}
                 {/* ------------------------------------ */}
@@ -386,19 +448,28 @@ const RegistrationForm = ({ switchToLogin }) => {
                 )}
 
                 {/* 提交按鈕 */}
-                <button 
-                    type="submit" 
-                    style={submitButtonStyle}
+                <button
+                    type="submit"
+                    disabled={loading}
+                    style={{
+                        ...submitButtonStyle,
+                        opacity: loading ? 0.6 : 1,
+                        cursor: loading ? 'not-allowed' : 'pointer'
+                    }}
                     onMouseOver={e => {
-                        e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN; 
-                        e.currentTarget.style.transform = 'translateY(-1px)';
+                        if (!loading) {
+                            e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN;
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                        }
                     }}
                     onMouseOut={e => {
-                        e.currentTarget.style.backgroundColor = COLOR_BRICK_RED;
-                        e.currentTarget.style.transform = 'translateY(0)';
+                        if (!loading) {
+                            e.currentTarget.style.backgroundColor = COLOR_BRICK_RED;
+                            e.currentTarget.style.transform = 'translateY(0)';
+                        }
                     }}
                 >
-                    立即註冊，加入師聲
+                    {loading ? '註冊中...' : '立即註冊，加入師聲'}
                 </button>
             </form>
             

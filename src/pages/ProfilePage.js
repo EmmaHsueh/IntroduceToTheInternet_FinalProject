@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom'; // 1. 導入 useLocation
-import Header from '../components/Header'; 
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import Header from '../components/Header';
+import { useAuth } from '../contexts/AuthContext'; 
 
 // ------------------------------------
 // 統一配色定義 (淺色活潑大學風格)
@@ -50,28 +51,38 @@ const MOCK_USER_COMMENTS = [
 
 
 const ProfilePage = () => {
-    // 使用 useState 來管理可變的個人檔案資料
-    const [currentUser, setCurrentUser] = useState(MOCK_INITIAL_USER); 
-    const [activeTab, setActiveTab] = useState('posts');
-    const userPosts = MOCK_USER_POSTS;
-    const userComments = MOCK_USER_COMMENTS;
-    const navigate = useNavigate(); 
-    const location = useLocation(); // 導入 useLocation
+    // 從 AuthContext 獲取登入用戶資料
+    const { currentUser: authUser, userProfile } = useAuth();
 
-    // 處理從編輯頁面回傳的資料
+    const [activeTab, setActiveTab] = useState('posts');
+    const userPosts = MOCK_USER_POSTS; // TODO: 之後從 Firestore 查詢
+    const userComments = MOCK_USER_COMMENTS; // TODO: 之後從 Firestore 查詢
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    // 如果未登入，導向登入頁
     useEffect(() => {
-        // 檢查 state 中是否有 updatedProfile
-        if (location.state && location.state.updatedProfile) {
-            console.log('ProfilePage: 成功接收到更新後的個人檔案:', location.state.updatedProfile);
-            // 應用更新後的資料
-            setCurrentUser(location.state.updatedProfile);
-            
-            // 清除 state，防止重新整理或其他導航操作再次應用
-            // 由於 ProfileEditPage 使用了 replace: true，這裡可以不用額外導航
-            // 但如果 App.js 的路由結構允許，也可以選擇清除 state
-            // navigate(location.pathname, { replace: true, state: {} }); 
+        if (!authUser) {
+            navigate('/login');
         }
-    }, [location.state]); // 僅依賴 location.state 變化
+    }, [authUser, navigate]);
+
+    // 如果還在載入或未登入，顯示載入中
+    if (!authUser || !userProfile) {
+        return (
+            <div>
+                <Header />
+                <div style={{
+                    textAlign: 'center',
+                    padding: '50px',
+                    fontSize: '18px',
+                    color: COLOR_OLIVE_GREEN
+                }}>
+                    載入中...
+                </div>
+            </div>
+        );
+    }
 
     // ------------------------------------
     // 樣式定義
@@ -105,12 +116,12 @@ const ProfilePage = () => {
     // ------------------------------------
     // 事件處理
     // ------------------------------------
-    const handleEditProfile = () => { 
+    const handleEditProfile = () => {
         console.log('導航到個人檔案編輯頁面，並傳遞當前資料');
-        // 傳遞當前最新的 currentUser 資料到編輯頁面
-        navigate('/profile/edit', { 
-            state: { initialProfileData: currentUser } 
-        }); 
+        // 傳遞當前登入用戶的資料到編輯頁面
+        navigate('/profile/edit', {
+            state: { initialProfileData: userProfile }
+        });
     };
 
     // ------------------------------------
@@ -202,31 +213,31 @@ const ProfilePage = () => {
                     {/* 1. 個人資訊區塊 */}
                     <div style={{ display: 'flex', gap: '40px', marginBottom: '30px', alignItems: 'flex-start' }}>
                         {/* 1.1 大頭貼 */}
-                        <div style={{ 
-                            fontSize: '6em', 
-                            width: '120px', 
-                            height: '120px', 
-                            borderRadius: '50%', 
-                            backgroundColor: COLOR_OFF_WHITE, 
-                            display: 'flex', 
-                            justifyContent: 'center', 
-                            alignItems: 'center', 
+                        <div style={{
+                            fontSize: '6em',
+                            width: '120px',
+                            height: '120px',
+                            borderRadius: '50%',
+                            backgroundColor: COLOR_OFF_WHITE,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
                             boxShadow: '0 0 10px rgba(0,0,0,0.05)',
                             flexShrink: 0
                         }}>
-                            {AVATAR_MAPPING[currentUser.avatar]} {/* 使用 currentUser */}
+                            {AVATAR_MAPPING[userProfile.avatar] || '👤'}
                         </div>
-                        
+
                         {/* 1.2 資訊詳情 */}
                         <div style={{ flex: 1 }}>
                             {/* 標題和編輯按鈕 - 使用 Flex 佈局 */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', paddingBottom: '10px', borderBottom: `3px solid ${COLOR_MORANDI_BROWN}` }}>
-                                <h1 style={{ 
-                                    fontSize: '2em', 
-                                    color: COLOR_DEEP_NAVY, 
-                                    margin: 0 // 移除 h1 預設 margin
+                                <h1 style={{
+                                    fontSize: '2em',
+                                    color: COLOR_DEEP_NAVY,
+                                    margin: 0
                                 }}>
-                                    {currentUser.nickname} ({currentUser.user_login}) {/* 使用 currentUser */}
+                                    {userProfile.nickname} ({userProfile.user_login})
                                 </h1>
                                 {/* 編輯按鈕 */}
                                 <button
@@ -247,21 +258,21 @@ const ProfilePage = () => {
 
                             {/* 其他個人資訊 */}
                             <div style={{ marginBottom: '15px', color: COLOR_OLIVE_GREEN, fontSize: '1em' }}>
-                                <div style={{ marginBottom: '5px' }}>📧 電子郵件: <span style={{ color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{currentUser.user_email}</span></div>
-                                <div style={{ marginBottom: '5px' }}>👤 真實姓名: <span style={{ color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{currentUser.last_name}{currentUser.first_name}</span></div>
-                                <div>🚻 性別: <span style={{ color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{currentUser.gender}</span></div>
+                                <div style={{ marginBottom: '5px' }}>📧 電子郵件: <span style={{ color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{userProfile.email}</span></div>
+                                <div style={{ marginBottom: '5px' }}>👤 真實姓名: <span style={{ color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{userProfile.last_name}{userProfile.first_name}</span></div>
+                                <div>🚻 性別: <span style={{ color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{userProfile.gender}</span></div>
                             </div>
-                            
-                            <p style={{ 
-                                fontSize: '16px', 
-                                color: COLOR_DEEP_NAVY, 
+
+                            <p style={{
+                                fontSize: '16px',
+                                color: COLOR_DEEP_NAVY,
                                 padding: '15px',
                                 borderLeft: `3px solid ${COLOR_MORANDI_BROWN}`,
                                 backgroundColor: COLOR_OFF_WHITE,
                                 borderRadius: '5px',
-                                whiteSpace: 'pre-wrap' // 允許換行
+                                whiteSpace: 'pre-wrap'
                             }}>
-                                **自我介紹:** {currentUser.bio}
+                                <strong>自我介紹:</strong> {userProfile.bio}
                             </p>
                         </div>
                     </div>
