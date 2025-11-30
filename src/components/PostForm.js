@@ -6,6 +6,9 @@ import React, { useState, useCallback } from 'react';
 const REMOVE_BG_API_KEY = "soM57AtY8CuHm8VhkYTyXxBP"; 
 const REMOVE_BG_API_URL = "https://api.remove.bg/v1.0/removebg";
 
+// 後端 API 地址
+const MODERATION_API_URL = "http://localhost:3001/moderation";
+
 const COLOR_DEEP_NAVY = '#1e2a38';     
 const COLOR_OLIVE_GREEN = '#454f3b';   
 const COLOR_MORANDI_BROWN = '#a38c6b'; 
@@ -33,17 +36,13 @@ const BUTTON_PRIMARY_STYLE = {
     borderRadius: '6px', 
     cursor: 'pointer', 
     fontWeight: 'bold',
-    transition: 'background-color 0.3s'
+    transition: 'background-color 0.3s',
+    whiteSpace: 'nowrap' // 防止按鈕文字換行
 };
 
 // ------------------------------------
-// 輔助函式：Remove.bg API 呼叫
+// 輔助函式區
 // ------------------------------------
-/**
- * 使用 remove.bg API 移除圖片背景
- * @param {File} file - 輸入的圖像檔案
- * @returns {Promise<string>} 去背後的圖片 Blob URL
- */
 const removeBgFromFile = async (file) => {
     const formData = new FormData();
     formData.append('image_file', file);
@@ -51,24 +50,19 @@ const removeBgFromFile = async (file) => {
     
     const response = await fetch(REMOVE_BG_API_URL, {
         method: 'POST',
-        headers: {
-            'X-Api-Key': REMOVE_BG_API_KEY,
-        },
+        headers: { 'X-Api-Key': REMOVE_BG_API_KEY },
         body: formData
     });
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.errors?.[0]?.title || `HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(errorData.errors?.[0]?.title || `HTTP ${response.status}`);
     }
 
     const blob = await response.blob();
     return URL.createObjectURL(blob);
 };
 
-/**
- * 將 Blob URL 轉換為 Base64（用於儲存到 localStorage）
- */
 const blobUrlToBase64 = async (blobUrl) => {
     const response = await fetch(blobUrl);
     const blob = await response.blob();
@@ -84,10 +78,13 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [images, setImages] = useState([]); 
-    const [globalMessage, setGlobalMessage] = useState('');
+    
+    // 拆分訊息狀態
+    const [globalMessage, setGlobalMessage] = useState(''); // 用於底部 (審查結果)
+    const [imageMessage, setImageMessage] = useState('');   // 用於圖片區 (去背狀態)
 
     // ------------------------------------
-    // 圖片上傳處理
+    // 圖片處理
     // ------------------------------------
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
@@ -99,91 +96,95 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
                 isProcessing: false,
                 isProcessed: false,
             }));
-            setImages(prevImages => [...prevImages, ...newImages]); 
+            setImages(prev => [...prev, ...newImages]); 
+            setImageMessage(''); // 清除之前的圖片訊息
             e.target.value = null; 
         }
     };
 
-    // ------------------------------------
-    // 圖片去背邏輯 (Remove.bg API Call)
-    // ------------------------------------
     const handleRemoveBackground = useCallback(async (targetImage) => {
-        if (!targetImage.file) {
-            setGlobalMessage('錯誤：缺少圖片文件，無法進行去背。');
-            return;
-        }
-
         setImages(prev => prev.map(img => 
             img.id === targetImage.id ? { ...img, isProcessing: true } : img
         ));
-        setGlobalMessage('ℹ️ 正在使用 remove.bg 進行圖片去背處理...');
+        // 使用 imageMessage 顯示狀態
+        setImageMessage('ℹ️ 正在處理圖片去背...');
 
         try {
             const resultUrl = await removeBgFromFile(targetImage.file);
-            
             setImages(prev => prev.map(img => 
                 img.id === targetImage.id 
-                    ? { 
-                          ...img, 
-                          url: resultUrl,
-                          isProcessing: false,
-                          isProcessed: true,
-                      } 
+                    ? { ...img, url: resultUrl, isProcessing: false, isProcessed: true } 
                     : img
             ));
-            setGlobalMessage('✅ 圖片去背成功！');
-
-            if (targetImage.url.startsWith('blob:')) {
-                URL.revokeObjectURL(targetImage.url);
-            }
-
+            setImageMessage('✅ 圖片去背成功！');
         } catch (error) {
-            console.error('去背請求失敗:', error);
-            setGlobalMessage(`❌ 去背失敗：${error.message || '無法連接到服務。'}`);
-            
+            console.error('去背失敗:', error);
+            setImageMessage(`❌ 去背失敗：${error.message}`);
             setImages(prev => prev.map(img => 
                 img.id === targetImage.id ? { ...img, isProcessing: false } : img
             ));
         }
     }, []); 
 
-    // ------------------------------------
-    // 移除圖片
-    // ------------------------------------
     const handleRemoveImage = (targetId) => {
-        setImages(prevImages => {
-            const targetImage = prevImages.find(img => img.id === targetId);
-            if (targetImage && targetImage.url.startsWith('blob:')) {
-                URL.revokeObjectURL(targetImage.url);
-            }
-            return prevImages.filter(img => img.id !== targetId);
-        });
-    }
+        setImages(prev => prev.filter(img => img.id !== targetId));
+    };
 
     // ------------------------------------
-    // 送出處理（轉換為 Base64）
+    // 送出處理 (含 AI 審查)
     // ------------------------------------
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (title.trim() && content.trim()) {
-            try {
-                // 將所有 Blob URL 轉換為 Base64
-                const base64Images = await Promise.all(
-                    images.map(img => blobUrlToBase64(img.url))
-                );
-                
-                onSubmit(title, content, base64Images); 
-                
-                setTitle('');
-                setContent('');
-                setImages([]);
-                setGlobalMessage('');
-            } catch (error) {
-                console.error('圖片處理失敗:', error);
-                setGlobalMessage('❌ 圖片處理失敗，請重試');
+        
+        if (!title.trim() || !content.trim()) {
+            setGlobalMessage('⚠️ 標題和內容都不能為空！');
+            return;
+        }
+
+        setGlobalMessage('🤖 正在進行 AI 內容審查...');
+
+        try {
+            // 1. 呼叫後端 Moderation API
+            const textCheckResponse = await fetch(MODERATION_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: `${title}\n${content}` })
+            });
+
+            if (!textCheckResponse.ok) {
+                throw new Error('無法連接到審查伺服器');
             }
-        } else {
-            setGlobalMessage('標題和內容都不能為空！');
+
+            const checkResult = await textCheckResponse.json();
+
+            // 2. 判斷審查結果
+            if (checkResult.flagged) {
+                const reasons = Object.keys(checkResult.categories)
+                    .filter(key => checkResult.categories[key])
+                    .join(', ');
+                
+                setGlobalMessage(`❌ 內容包含敏感詞彙，無法發布。\n(偵測原因: ${reasons})`);
+                return; // ⛔️ 擋住
+            }
+
+            // 3. 通過審查，處理圖片並送出
+            setGlobalMessage('✅ 審查通過！正在上傳...');
+            const base64Images = await Promise.all(
+                images.map(img => blobUrlToBase64(img.url))
+            );
+            
+            onSubmit(title, content, base64Images); 
+            
+            // 重置
+            setTitle('');
+            setContent('');
+            setImages([]);
+            setGlobalMessage('');
+            setImageMessage('');
+
+        } catch (error) {
+            console.error('處理失敗:', error);
+            setGlobalMessage(`❌ 發生錯誤：${error.message}`);
         }
     };
 
@@ -193,6 +194,7 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
                 發表新貼文到 【{boardName}】
             </h2>
             <form onSubmit={handleSubmit}>
+                {/* 標題 */}
                 <div style={{ marginBottom: '20px' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: COLOR_DEEP_NAVY }}>標題：</label>
                     <input
@@ -205,6 +207,7 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
                     />
                 </div>
 
+                {/* 圖片上傳 */}
                 <div style={{ marginBottom: '20px', padding: '15px', border: `1px dashed ${COLOR_BORDER}`, borderRadius: '6px' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: COLOR_DEEP_NAVY }}>上傳圖片 (可多選)：</label>
                     <input
@@ -216,73 +219,43 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
                     />
                     
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', marginTop: '15px' }}>
-                        {images.map((image, index) => {
-                            const isCurrentProcessing = image.isProcessing;
-                            return (
-                                <div key={image.id} style={{ 
-                                    width: '120px', 
-                                    border: `1px solid ${COLOR_BORDER}`, 
-                                    borderRadius: '6px', 
-                                    overflow: 'hidden', 
-                                    position: 'relative', 
-                                    boxShadow: image.isProcessed ? `0 0 0 2px ${COLOR_OLIVE_GREEN}` : 'none',
-                                    backgroundImage: 'repeating-conic-gradient(#f0f0f0 0% 25%, #ffffff 0% 50%)',
-                                    backgroundSize: '20px 20px',
-                                    backgroundColor: '#fff'
-                                }}>
-                                    <img 
-                                        src={image.url}
-                                        alt={`預覽圖 ${index + 1}`} 
-                                        style={{ width: '100%', height: '100px', objectFit: 'contain', display: 'block' }}
-                                    />
-                                    <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '5px', backgroundColor: '#fff', borderTop: `1px solid ${COLOR_BORDER}` }}>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveBackground(image)}
-                                            style={{
-                                                padding: '5px 10px',
-                                                backgroundColor: image.isProcessed ? COLOR_MORANDI_BROWN : COLOR_OLIVE_GREEN,
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '4px',
-                                                cursor: 'pointer',
-                                                fontSize: '12px',
-                                                opacity: isCurrentProcessing ? 0.7 : 1,
-                                                pointerEvents: isCurrentProcessing ? 'none' : 'auto',
-                                                transition: 'background-color 0.3s'
-                                            }}
-                                            disabled={isCurrentProcessing}
-                                        >
-                                            {isCurrentProcessing ? '處理中...' : (image.isProcessed ? '✅ 已去背' : '✂️ 去背')}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveImage(image.id)}
-                                            style={{
-                                                padding: '5px 10px',
-                                                backgroundColor: COLOR_SECONDARY_TEXT,
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '4px',
-                                                cursor: 'pointer',
-                                                fontSize: '12px',
-                                                transition: 'background-color 0.3s'
-                                            }}
-                                        >
-                                            移除
-                                        </button>
-                                    </div>
+                        {images.map((image, index) => (
+                            <div key={image.id} style={{ width: '120px', border: `1px solid ${COLOR_BORDER}`, borderRadius: '6px', overflow: 'hidden', backgroundColor: '#fff' }}>
+                                <img src={image.url} alt="preview" style={{ width: '100%', height: '100px', objectFit: 'contain' }} />
+                                <div style={{ padding: '5px', display: 'flex', gap: '5px', justifyContent: 'center' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveBackground(image)}
+                                        style={{ fontSize: '12px', padding: '3px 8px', cursor: 'pointer', border: 'none', borderRadius: '4px', backgroundColor: image.isProcessed ? COLOR_MORANDI_BROWN : COLOR_OLIVE_GREEN, color: 'white' }}
+                                        disabled={image.isProcessing}
+                                    >
+                                        {image.isProcessing ? '...' : (image.isProcessed ? '已去背' : '去背')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveImage(image.id)}
+                                        style={{ fontSize: '12px', padding: '3px 8px', cursor: 'pointer', border: 'none', borderRadius: '4px', backgroundColor: COLOR_SECONDARY_TEXT, color: 'white' }}
+                                    >
+                                        刪除
+                                    </button>
                                 </div>
-                            );
-                        })}
+                            </div>
+                        ))}
                     </div>
-                    {globalMessage && 
-                        <p style={{ color: globalMessage.startsWith('❌') ? COLOR_BRICK_RED : COLOR_OLIVE_GREEN, fontSize: 'small', marginTop: '15px' }}>
-                            {globalMessage}
+
+                    {/* 這裡顯示 imageMessage (圖片去背相關訊息) */}
+                    {imageMessage && (
+                        <p style={{ 
+                            color: imageMessage.startsWith('❌') ? COLOR_BRICK_RED : COLOR_OLIVE_GREEN, 
+                            fontSize: 'small', 
+                            marginTop: '15px' 
+                        }}>
+                            {imageMessage}
                         </p>
-                    }
+                    )}
                 </div>
 
+                {/* 內容 */}
                 <div style={{ marginBottom: '30px' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: COLOR_DEEP_NAVY }}>內容：</label>
                     <textarea
@@ -294,24 +267,45 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
                     />
                 </div>
                 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
-                    <button 
-                        type="button" 
-                        onClick={onCancel} 
-                        style={{...BUTTON_PRIMARY_STYLE, backgroundColor: COLOR_OFF_WHITE, color: COLOR_DEEP_NAVY}} 
-                        onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_BORDER} 
-                        onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_OFF_WHITE}
-                    >
-                        取消
-                    </button>
-                    <button 
-                        type="submit" 
-                        style={BUTTON_PRIMARY_STYLE}
-                        onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN} 
-                        onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_BRICK_RED}
-                    >
-                        送出貼文
-                    </button>
+                {/* 底部區域：顯示審查訊息與按鈕 */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
+                    
+                    {/* 這裡顯示 globalMessage (審查與發布相關訊息) */}
+                    <div style={{ flex: 1, paddingRight: '20px' }}>
+                        {globalMessage && (
+                            <p style={{ 
+                                color: globalMessage.startsWith('❌') ? COLOR_BRICK_RED : COLOR_OLIVE_GREEN, 
+                                fontSize: '14px', 
+                                margin: 0,
+                                fontWeight: 'bold',
+                                whiteSpace: 'pre-wrap', 
+                                lineHeight: '1.4'
+                            }}>
+                                {globalMessage}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* 按鈕區 */}
+                    <div style={{ display: 'flex', gap: '15px', flexShrink: 0 }}>
+                        <button 
+                            type="button" 
+                            onClick={onCancel} 
+                            style={{...BUTTON_PRIMARY_STYLE, backgroundColor: COLOR_OFF_WHITE, color: COLOR_DEEP_NAVY}} 
+                            onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_BORDER} 
+                            onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_OFF_WHITE}
+                        >
+                            取消
+                        </button>
+                        <button 
+                            type="submit" 
+                            style={BUTTON_PRIMARY_STYLE}
+                            onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN} 
+                            onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_BRICK_RED}
+                        >
+                            送出貼文
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
