@@ -3,7 +3,13 @@ import React, { useState, useCallback, useEffect } from 'react'; // 🏆 修正:
 import Header from './Header'; // 假設 Header 存在
 import BoardNav from './BoardNav'; // 假設 BoardNav 存在
 import PostDetailPage from "../pages/PostDetailPage";
-import PostForm from './PostForm'; 
+import PostForm from './PostForm';
+
+// 🔥 新增：引入 Firestore 操作函數
+import { listenToPosts, createPost, addCommentToPost } from '../services/postService';
+
+// 🔥 新增：引入認證相關功能
+import { useAuth } from '../contexts/AuthContext'; 
 
 
 // ------------------------------------
@@ -213,34 +219,36 @@ const Post = ({ post, onClick }) => (
 
 
 // ------------------------------------
-// 主要組件 (BoardTemplate) - 修正 Persistence 邏輯，實現看板隔離
+// 主要組件 (BoardTemplate) - 🔥 整合 Firestore
 // ------------------------------------
 const BoardTemplate = ({ boardName }) => {
-    // 🏆 修正 1: 初始化 posts 狀態為空陣列
-    const [posts, setPosts] = useState([]); 
+    // 🔥 新增：取得當前登入用戶資訊
+    const { currentUser, userProfile } = useAuth();
 
+    // 初始化 posts 狀態為空陣列
+    const [posts, setPosts] = useState([]);
     const [showChat, setShowChat] = useState(false);
-    const [isPosting, setIsPosting] = useState(false); 
+    const [isPosting, setIsPosting] = useState(false);
     const [selectedPost, setSelectedPost] = useState(null);
+    const [loading, setLoading] = useState(true); // 🔥 新增：載入狀態
 
-    // 🏆 修正 2: 監聽 boardName 變化，並從 board-specific localStorage 讀取該看板的貼文
+    // 🔥 修改：從 Firestore 即時監聽貼文（取代 localStorage）
     useEffect(() => {
-        const localStorageKey = `boardPosts_${boardName}`;
-        const savedPosts = localStorage.getItem(localStorageKey);
-        
-        if (savedPosts) {
-            setPosts(JSON.parse(savedPosts));
-        } else {
-            // 如果該看板沒有儲存數據，讓它從空開始，實現看板隔離
-            setPosts([]); 
-        }
-    }, [boardName]); // 當 boardName 改變時觸發
+        console.log(`📡 開始監聽【${boardName}】看板的貼文...`);
 
-    // 🏆 修正 3: 監聽 posts 狀態變化，並儲存到 board-specific localStorage key
-    useEffect(() => {
-        const localStorageKey = `boardPosts_${boardName}`;
-        localStorage.setItem(localStorageKey, JSON.stringify(posts));
-    }, [posts, boardName]); // 依賴項加入 boardName，確保儲存到正確的位置
+        // 使用 listenToPosts 開始監聽
+        const unsubscribe = listenToPosts(boardName, (newPosts) => {
+            console.log(`✅ 收到【${boardName}】看板的 ${newPosts.length} 篇貼文`);
+            setPosts(newPosts);
+            setLoading(false); // 載入完成
+        });
+
+        // ⚠️ 重要：當組件卸載或 boardName 改變時，停止監聽
+        return () => {
+            console.log(`🔌 停止監聽【${boardName}】看板`);
+            unsubscribe();
+        };
+    }, [boardName]); // 當 boardName 改變時重新監聽
 
     // 聊天室邏輯 (略)
     const [chatMessages, setChatMessages] = useState([
@@ -253,22 +261,41 @@ const BoardTemplate = ({ boardName }) => {
         ]);
     }, []);
 
-    // 修正：現在接受 imageUrls 陣列參數並儲存 (保持不變)
-    const handleNewPostSubmit = (title, content, imageUrls) => {
-        const newPost = { 
-            id: Date.now(), 
-            title, 
-            content, 
-            author: '當前用戶 (您)', 
-            date: new Date().toLocaleDateString('zh-TW'), 
-            commentCount: 0,
-            imageUrls: imageUrls || [], // 儲存圖片 URL 陣列
-            comments: [] // 新貼文沒有留言
-        };
-        setPosts(prevPosts => [newPost, ...prevPosts]); 
-        setIsPosting(false);
-        // 為了避免 alert 阻礙流程，這裡使用 console.log 或忽略
-        console.log('新貼文已成功發表！' + (imageUrls.length > 0 ? ` (包含 ${imageUrls.length} 張圖片)` : ''));
+    // 🔥 修改：新增貼文到 Firestore（取代 localStorage）
+    const handleNewPostSubmit = async (title, content, imageUrls) => {
+        try {
+            // ⚠️ 檢查用戶是否已登入
+            if (!currentUser) {
+                alert('⚠️ 請先登入才能發文！');
+                return;
+            }
+
+            console.log('📝 準備發送貼文到 Firestore...');
+
+            // 呼叫 createPost 函數，將貼文存入 Firestore
+            const newPostId = await createPost({
+                title,
+                content,
+                boardName,
+                authorId: currentUser.uid,
+                authorName: userProfile?.nickname || currentUser.email.split('@')[0] || '匿名用戶',
+                imageUrls: imageUrls || []
+            });
+
+            console.log(`✅ 貼文已成功發表！ID: ${newPostId}`);
+            console.log(`📷 包含 ${imageUrls.length} 張圖片`);
+
+            // 關閉發文表單
+            setIsPosting(false);
+
+            // 🔑 重點：不需要手動更新 posts state！
+            // 因為我們使用 onSnapshot 監聽，Firestore 會自動推送新資料
+            // 畫面會自動更新！
+
+        } catch (error) {
+            console.error('❌ 發文失敗:', error);
+            alert(`發文失敗：${error.message}`);
+        }
     };
 
     const handlePostClick = (post) => {
@@ -316,39 +343,46 @@ const BoardTemplate = ({ boardName }) => {
 
                     {selectedPost ? (
                         /* 🔸 顯示貼文詳情頁 */
-                        <PostDetailPage 
+                        <PostDetailPage
                             post={selectedPost}
                             onBack={() => setSelectedPost(null)}
-                            onAddComment={(postId, content) => {
-                                const newComment = {
-                                    id: Date.now(),
-                                    author: "當前用戶(您)",
-                                    content,
-                                    date: new Date().toLocaleString("zh-TW")
-                                };
-
-                                setPosts(prev => {
-                                    const updatedPosts = prev.map(p =>
-                                        p.id === postId
-                                            ? { 
-                                                ...p, 
-                                                commentCount: p.commentCount + 1,
-                                                comments: [
-                                                    ...(p.comments || []),
-                                                    newComment
-                                                ]
-                                            }
-                                            : p
-                                    );
-                                    
-                                    // 確保 PostDetailPage 立即更新 (如果 PostDetailPage 依賴 props 並且已經實作)
-                                    const updatedPost = updatedPosts.find(p => p.id === postId);
-                                    if (updatedPost) {
-                                        setSelectedPost(updatedPost); 
+                            onAddComment={async (postId, content) => {
+                                try {
+                                    // ⚠️ 檢查用戶是否已登入
+                                    if (!currentUser) {
+                                        alert('⚠️ 請先登入才能留言！');
+                                        return;
                                     }
-                                    
-                                    return updatedPosts;
-                                });
+
+                                    console.log('💬 準備新增留言到 Firestore...');
+
+                                    // 🔥 使用 addCommentToPost 將留言存入 Firestore
+                                    await addCommentToPost(postId, {
+                                        author: userProfile?.nickname || currentUser.email.split('@')[0] || '匿名用戶',
+                                        content
+                                    });
+
+                                    console.log('✅ 留言已成功新增！');
+
+                                    // 🔑 重點：不需要手動更新 posts state！
+                                    // onSnapshot 會自動偵測 Firestore 的變化
+                                    // 但為了讓 PostDetailPage 立即更新，我們需要更新 selectedPost
+                                    // 從最新的 posts 中找到更新後的貼文
+                                    const updatedPost = posts.find(p => p.id === postId);
+                                    if (updatedPost) {
+                                        // 等一下下讓 Firestore 更新完成
+                                        setTimeout(() => {
+                                            const latestPost = posts.find(p => p.id === postId);
+                                            if (latestPost) {
+                                                setSelectedPost(latestPost);
+                                            }
+                                        }, 500);
+                                    }
+
+                                } catch (error) {
+                                    console.error('❌ 留言失敗:', error);
+                                    alert(`留言失敗：${error.message}`);
+                                }
                             }}
                         />
                     ) : (
@@ -403,13 +437,23 @@ const BoardTemplate = ({ boardName }) => {
                                     }}>最新文章</h3>
 
                                     <div className="posts-list" style={{ marginBottom: '20px' }}>
-                                        {posts.map(post => (
-                                            <Post key={post.id} post={post} onClick={() => setSelectedPost(post)} />
-                                        ))}
-                                        {posts.length === 0 && (
-                                            <div style={{ textAlign: 'center', color: COLOR_SECONDARY_TEXT, padding: '20px' }}>
-                                                看板目前沒有文章。
+                                        {/* 🔥 新增：顯示載入狀態 */}
+                                        {loading ? (
+                                            <div style={{ textAlign: 'center', color: COLOR_SECONDARY_TEXT, padding: '40px' }}>
+                                                <div style={{ fontSize: '24px', marginBottom: '10px' }}>⏳</div>
+                                                <div>正在載入貼文...</div>
                                             </div>
+                                        ) : (
+                                            <>
+                                                {posts.map(post => (
+                                                    <Post key={post.id} post={post} onClick={() => setSelectedPost(post)} />
+                                                ))}
+                                                {posts.length === 0 && (
+                                                    <div style={{ textAlign: 'center', color: COLOR_SECONDARY_TEXT, padding: '20px' }}>
+                                                        看板目前沒有文章。
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
                                     </div>
                                 </>
