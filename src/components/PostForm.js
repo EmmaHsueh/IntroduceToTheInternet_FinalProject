@@ -131,19 +131,22 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
     };
 
     // ------------------------------------
-    // 送出處理 (含 AI 審查)
+    // 送出處理 (🔥 暫時停用 AI 審查，先測試 Firestore)
     // ------------------------------------
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!title.trim() || !content.trim()) {
             setGlobalMessage('⚠️ 標題和內容都不能為空！');
             return;
         }
 
-        setGlobalMessage('🤖 正在進行 AI 內容審查...');
+        // 🔥 暫時註解掉審查功能，先讓 Firestore 整合跑起來
+        // setGlobalMessage('🤖 正在進行 AI 內容審查...');
 
         try {
+            // ⚠️ 以下審查功能暫時停用
+            /*
             // 1. 呼叫後端 Moderation API
             const textCheckResponse = await fetch(MODERATION_API_URL, {
                 method: 'POST',
@@ -162,19 +165,20 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
                 const reasons = Object.keys(checkResult.categories)
                     .filter(key => checkResult.categories[key])
                     .join(', ');
-                
+
                 setGlobalMessage(`❌ 內容包含敏感詞彙，無法發布。\n(偵測原因: ${reasons})`);
                 return; // ⛔️ 擋住
             }
+            */
 
-            // 3. 通過審查，處理圖片並送出
-            setGlobalMessage('✅ 審查通過！正在上傳...');
+            // 🔥 直接處理圖片並送出（跳過審查）
+            setGlobalMessage('✅ 正在發布貼文...');
             const base64Images = await Promise.all(
                 images.map(img => blobUrlToBase64(img.url))
             );
-            
-            onSubmit(title, content, base64Images); 
-            
+
+            onSubmit(title, content, base64Images);
+
             // 重置
             setTitle('');
             setContent('');

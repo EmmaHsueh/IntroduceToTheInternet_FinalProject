@@ -5,6 +5,7 @@ import {
   collection,      // 用來指定集合
   addDoc,          // 新增文件
   getDocs,         // 取得所有文件（一次性）
+  getDoc,          // 🔥 新增：取得單一文件
   query,           // 建立查詢
   where,           // 查詢條件
   orderBy,         // 排序
@@ -170,14 +171,14 @@ export const addCommentToPost = async (postId, comment) => {
     // 1. 取得指定貼文的參照
     const postRef = doc(db, 'posts', postId);
 
-    // 2. 先取得現有的貼文資料
-    const postSnapshot = await getDocs(query(collection(db, 'posts'), where('__name__', '==', postId)));
+    // 2. 先取得現有的貼文資料 - 🔥 修正：使用 getDoc 而不是 getDocs
+    const postSnapshot = await getDoc(postRef);
 
-    if (postSnapshot.empty) {
+    if (!postSnapshot.exists()) {
       throw new Error('找不到指定的貼文');
     }
 
-    const postData = postSnapshot.docs[0].data();
+    const postData = postSnapshot.data();
     const existingComments = postData.comments || [];
 
     // 3. 準備新留言資料
@@ -215,17 +216,17 @@ export const addCommentToPost = async (postId, comment) => {
  */
 export const getPostById = async (postId) => {
   try {
-    const q = query(collection(db, 'posts'), where('__name__', '==', postId));
-    const snapshot = await getDocs(q);
+    // 🔥 修正：直接使用 doc 參照並用 getDoc 取得
+    const postRef = doc(db, 'posts', postId);
+    const postSnapshot = await getDoc(postRef);
 
-    if (snapshot.empty) {
+    if (!postSnapshot.exists()) {
       throw new Error('找不到指定的貼文');
     }
 
-    const doc = snapshot.docs[0];
     return {
-      id: doc.id,
-      ...doc.data()
+      id: postSnapshot.id,
+      ...postSnapshot.data()
     };
 
   } catch (error) {
