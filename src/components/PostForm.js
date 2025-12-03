@@ -46,9 +46,7 @@ const BUTTON_PRIMARY_STYLE = {
 const removeBgFromFile = async (file) => {
     const formData = new FormData();
     formData.append('image_file', file);
-    // formData.append('size', 'auto'); // 後端處理也可以
 
-    // ⚠️ 修改點：直接 POST 到自己的後端，不需要附帶 API Key
     const response = await fetch(REMOVE_BG_API_URL, {
         method: 'POST',
         body: formData
@@ -149,8 +147,16 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
                 body: JSON.stringify({ content: `${title}\n${content}` })
             });
 
+            // ⚠️ 修正：嘗試解析後端回傳的錯誤訊息，而不是直接丟出通用錯誤
             if (!textCheckResponse.ok) {
-                throw new Error('無法連接到審查伺服器');
+                let errorMsg = '無法連接到審查伺服器';
+                try {
+                    const errorData = await textCheckResponse.json();
+                    if (errorData.error) errorMsg = errorData.error;
+                } catch (e) {
+                    // JSON 解析失敗，維持原訊息
+                }
+                throw new Error(errorMsg);
             }
 
             const checkResult = await textCheckResponse.json();
