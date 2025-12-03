@@ -3,19 +3,19 @@ import React, { useState, useCallback } from 'react';
 // ------------------------------------
 // API & 配色定義
 // ------------------------------------
-const REMOVE_BG_API_KEY = "soM57AtY8CuHm8VhkYTyXxBP"; 
-const REMOVE_BG_API_URL = "https://api.remove.bg/v1.0/removebg";
+// ⚠️ 修改點：指向您自己的後端 API，不再直接呼叫 remove.bg
+// 在本地開發時是 localhost，部署後請換成 Render 的網址
+const BACKEND_URL = "https://introducetotheinternet-finalproject-0yrf.onrender.com"; 
+const REMOVE_BG_API_URL = `${BACKEND_URL}/remove-bg`;
+const MODERATION_API_URL = `${BACKEND_URL}/moderation`;
 
-// 後端 API 地址
-const MODERATION_API_URL = "http://localhost:3001/moderation";
-
-const COLOR_DEEP_NAVY = '#1e2a38';     
-const COLOR_OLIVE_GREEN = '#454f3b';   
+const COLOR_DEEP_NAVY = '#1e2a38'; 
+const COLOR_OLIVE_GREEN = '#454f3b'; 
 const COLOR_MORANDI_BROWN = '#a38c6b'; 
-const COLOR_BRICK_RED = '#c9362a';     
+const COLOR_BRICK_RED = '#c9362a'; 
 const COLOR_SECONDARY_TEXT = '#666666'; 
 const COLOR_BORDER = '#dddddd';
-const COLOR_OFF_WHITE = '#f3f3e6';     
+const COLOR_OFF_WHITE = '#f3f3e6'; 
 const COLOR_HIGHLIGHT_LINE = COLOR_MORANDI_BROWN; 
 
 // 樣式定義
@@ -37,7 +37,7 @@ const BUTTON_PRIMARY_STYLE = {
     cursor: 'pointer', 
     fontWeight: 'bold',
     transition: 'background-color 0.3s',
-    whiteSpace: 'nowrap' // 防止按鈕文字換行
+    whiteSpace: 'nowrap'
 };
 
 // ------------------------------------
@@ -46,17 +46,17 @@ const BUTTON_PRIMARY_STYLE = {
 const removeBgFromFile = async (file) => {
     const formData = new FormData();
     formData.append('image_file', file);
-    formData.append('size', 'auto');
-    
+    // formData.append('size', 'auto'); // 後端處理也可以
+
+    // ⚠️ 修改點：直接 POST 到自己的後端，不需要附帶 API Key
     const response = await fetch(REMOVE_BG_API_URL, {
         method: 'POST',
-        headers: { 'X-Api-Key': REMOVE_BG_API_KEY },
         body: formData
     });
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.errors?.[0]?.title || `HTTP ${response.status}`);
+        throw new Error(errorData.error || `HTTP ${response.status}`);
     }
 
     const blob = await response.blob();
@@ -79,9 +79,8 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
     const [content, setContent] = useState('');
     const [images, setImages] = useState([]); 
     
-    // 拆分訊息狀態
-    const [globalMessage, setGlobalMessage] = useState(''); // 用於底部 (審查結果)
-    const [imageMessage, setImageMessage] = useState('');   // 用於圖片區 (去背狀態)
+    const [globalMessage, setGlobalMessage] = useState(''); 
+    const [imageMessage, setImageMessage] = useState(''); 
 
     // ------------------------------------
     // 圖片處理
@@ -97,7 +96,7 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
                 isProcessed: false,
             }));
             setImages(prev => [...prev, ...newImages]); 
-            setImageMessage(''); // 清除之前的圖片訊息
+            setImageMessage(''); 
             e.target.value = null; 
         }
     };
@@ -106,7 +105,6 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
         setImages(prev => prev.map(img => 
             img.id === targetImage.id ? { ...img, isProcessing: true } : img
         ));
-        // 使用 imageMessage 顯示狀態
         setImageMessage('ℹ️ 正在處理圖片去背...');
 
         try {
@@ -131,7 +129,7 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
     };
 
     // ------------------------------------
-    // 送出處理 (🔥 暫時停用 AI 審查，先測試 Firestore)
+    // 送出處理
     // ------------------------------------
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -141,12 +139,9 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
             return;
         }
 
-        // 🔥 暫時註解掉審查功能，先讓 Firestore 整合跑起來
-        // setGlobalMessage('🤖 正在進行 AI 內容審查...');
+        setGlobalMessage('🤖 正在進行 AI 內容審查...');
 
         try {
-            // ⚠️ 以下審查功能暫時停用
-            /*
             // 1. 呼叫後端 Moderation API
             const textCheckResponse = await fetch(MODERATION_API_URL, {
                 method: 'POST',
@@ -169,10 +164,9 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
                 setGlobalMessage(`❌ 內容包含敏感詞彙，無法發布。\n(偵測原因: ${reasons})`);
                 return; // ⛔️ 擋住
             }
-            */
-
-            // 🔥 直接處理圖片並送出（跳過審查）
-            setGlobalMessage('✅ 正在發布貼文...');
+            
+            // 審查通過，處理圖片
+            setGlobalMessage('✅ 審查通過！正在發布貼文...');
             const base64Images = await Promise.all(
                 images.map(img => blobUrlToBase64(img.url))
             );
@@ -247,7 +241,6 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
                         ))}
                     </div>
 
-                    {/* 這裡顯示 imageMessage (圖片去背相關訊息) */}
                     {imageMessage && (
                         <p style={{ 
                             color: imageMessage.startsWith('❌') ? COLOR_BRICK_RED : COLOR_OLIVE_GREEN, 
