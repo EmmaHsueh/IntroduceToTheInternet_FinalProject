@@ -150,7 +150,9 @@ app.post("/moderation", async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+const PORT = process.env.PORT || 10000;
+const HOST = '0.0.0.0'; // 這是關鍵！Render 需要這個才能連線
+
+app.listen(PORT, HOST, () => {
+  console.log(`Server running on http://${HOST}:${PORT}`);
 });
