@@ -80,6 +80,7 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
     const [globalMessage, setGlobalMessage] = useState(''); 
     const [imageMessage, setImageMessage] = useState(''); 
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
     // ------------------------------------
     // 圖片處理
     // ------------------------------------
@@ -137,6 +138,7 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
             return;
         }
 
+        setIsSubmitting(true);
         setGlobalMessage('🤖 正在進行 AI 內容審查...');
 
         try {
@@ -168,6 +170,7 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
                     .join(', ');
 
                 setGlobalMessage(`❌ 內容包含敏感詞彙，無法發布。\n(偵測原因: ${reasons})`);
+                setIsSubmitting(false);
                 return; // ⛔️ 擋住
             }
             
@@ -177,7 +180,7 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
                 images.map(img => blobUrlToBase64(img.url))
             );
 
-            onSubmit(title, content, base64Images);
+            await onSubmit(title, content, base64Images);
 
             // 重置
             setTitle('');
@@ -189,6 +192,7 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
         } catch (error) {
             console.error('處理失敗:', error);
             setGlobalMessage(`❌ 發生錯誤：${error.message}`);
+            setIsSubmitting(false);
         }
     };
 

@@ -264,15 +264,15 @@ const BoardTemplate = ({ boardName }) => {
     // 🔥 修改：新增貼文到 Firestore（取代 localStorage）
     const handleNewPostSubmit = async (title, content, imageUrls) => {
         try {
-            // ⚠️ 檢查用戶是否已登入
             if (!currentUser) {
-                alert('⚠️ 請先登入才能發文！');
-                return;
+                const errMsg = '⚠️ 請先登入才能發文！';
+                alert(errMsg);
+                throw new Error(errMsg); 
             }
 
             console.log('📝 準備發送貼文到 Firestore...');
 
-            // 呼叫 createPost 函數，將貼文存入 Firestore
+            // 呼叫 createPost 將貼文存入 Firestore
             const newPostId = await createPost({
                 title,
                 content,
@@ -283,18 +283,17 @@ const BoardTemplate = ({ boardName }) => {
             });
 
             console.log(`✅ 貼文已成功發表！ID: ${newPostId}`);
-            console.log(`📷 包含 ${imageUrls.length} 張圖片`);
 
-            // 關閉發文表單
-            setIsPosting(false);
-
-            // 🔑 重點：不需要手動更新 posts state！
-            // 因為我們使用 onSnapshot 監聽，Firestore 會自動推送新資料
-            // 畫面會自動更新！
+            // ----------------------------------------------------
+            // 🎯 關鍵動作：這裡會把狀態設為 false，畫面就會自動跳回文章列表
+            // ----------------------------------------------------
+            setIsPosting(false); 
 
         } catch (error) {
             console.error('❌ 發文失敗:', error);
             alert(`發文失敗：${error.message}`);
+            // 🔥 重要：拋出錯誤，讓 PostForm 知道失敗了，不要清空表單
+            throw error;
         }
     };
 
