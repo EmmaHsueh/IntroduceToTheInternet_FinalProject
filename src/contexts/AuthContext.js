@@ -131,9 +131,27 @@ export const AuthProvider = ({ children }) => {
       const userDoc = await getDoc(doc(db, 'users', uid));
       if (userDoc.exists()) {
         setUserProfile(userDoc.data());
+      } else {
+        // 如果找不到用戶資料，使用 Firebase Auth 的基本資訊作為備用
+        console.warn('Firestore 中找不到用戶資料，使用 Auth 資訊');
+        setUserProfile({
+          uid: uid,
+          email: auth.currentUser?.email || '',
+          nickname: auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || '用戶',
+          avatar: 'emoji-student',
+          bio: '這個人很懶，什麼都沒留下。'
+        });
       }
     } catch (error) {
       console.error('載入用戶資料錯誤:', error);
+      // 發生錯誤時也提供基本資訊
+      setUserProfile({
+        uid: uid,
+        email: auth.currentUser?.email || '',
+        nickname: auth.currentUser?.displayName || '用戶',
+        avatar: 'emoji-student',
+        bio: ''
+      });
     }
   };
 
@@ -142,11 +160,15 @@ export const AuthProvider = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (user) {
-        await loadUserProfile(user.uid);
+        // 🔥 優化：先設定 loading 為 false，讓 UI 能立即顯示
+        // 然後在背景載入用戶資料
+        setLoading(false);
+        // 非同步載入用戶資料，不阻塞 UI
+        loadUserProfile(user.uid);
       } else {
         setUserProfile(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return unsubscribe; // 清理監聽器

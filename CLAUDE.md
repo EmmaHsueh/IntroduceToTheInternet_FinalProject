@@ -16,22 +16,29 @@ npm start
 
 Development server runs on http://localhost:3000
 
-### Backend (Moderation Service)
+### Backend (Moderation & API Proxy Service)
 ```bash
 cd backend
 npm install
 node server.js
 ```
 
-Backend API runs on http://localhost:3001 and provides content moderation using Google's Perspective API.
+Backend API provides:
+- Content moderation using Google's Perspective API (`/moderation` endpoint)
+- Remove.bg API proxy for image background removal (`/remove-bg` endpoint)
+
+The backend is deployed on Render at: https://introducetotheinternet-finalproject-0yrf.onrender.com
+
+Backend requires an `.env` file with:
+- `PERSPECTIVE_API_KEY` - Google Perspective API key for content moderation
+- `REMOVE_BG_API_KEY` - Remove.bg API key for background removal
+- `PORT` (optional, defaults to 10000)
 
 ### Firebase Configuration
-Firebase is already configured in `src/firebase.js` with project credentials. The application includes:
-- Authentication (Firebase Auth) with Email/Password and Google OAuth
-- Database (Firestore)
-- File Storage (Firebase Storage)
-
-The backend requires an `.env` file with `PERSPECTIVE_API_KEY` for content moderation.
+Firebase is already configured in `src/firebase.js` with the `ntnu-talk` project credentials. The application uses:
+- **Authentication** (Firebase Auth) with Email/Password and Google OAuth
+- **Database** (Firestore) for posts, comments, and user profiles
+- **File Storage** (Firebase Storage) - configured but not yet actively used for images
 
 ## Architecture
 
@@ -43,7 +50,7 @@ The application uses React Router with the following route hierarchy:
 - `/profile` - User profile view
 - `/profile/edit` - Edit user profile
 - `/boards` - Board index/navigation
-- `/boards/:boardId` - Individual board pages (food, weather, events, etc.)
+- `/boards/:boardId` - Individual board pages (food, weather, events, clubs, courses, outfit, other)
 - `/boards/:boardId/:postId` - Post detail view with comments
 - `/boards/:boardId/new` - Create new post (alternative route)
 - `/media` - Media gallery page
@@ -52,41 +59,54 @@ The application uses React Router with the following route hierarchy:
 
 **Template Pattern**: The application uses a `BoardTemplate` component as a reusable template for all board pages. Each specific board page (FoodBoardPage, WeatherBoardPage, etc.) simply renders `<BoardTemplate boardName="Board Name" />`.
 
-**State Management**: Posts are stored in browser localStorage with board-specific keys (`boardPosts_${boardName}`), ensuring data isolation between different boards. Each board maintains its own independent post collection.
+**State Management**:
+- Posts are now stored in **Firestore** with real-time synchronization via `onSnapshot` listeners
+- Authentication state is managed globally via `AuthContext` using React Context API
+- Local component state is used for UI interactions (chat, forms, etc.)
 
 **Key Components**:
 - `BoardTemplate`: Main board UI with post list, post form, and chat widget
-- `PostForm`: Multi-image upload form with background removal (remove.bg API) and content moderation (Perspective API)
+- `PostForm`: Multi-image upload form with background removal (remove.bg API via backend proxy) and content moderation (Perspective API)
 - `PostDetailPage`: Renders full post with all images and comment thread
 - `Header`: Site navigation
 - `BoardNav`: Board-specific navigation
 - `AuthContext`: Global authentication state management using Context API
 - `MemberDirectory` / `MemberCard`: Member listing and profiles
 
+**Key Services**:
+- `postService.js`: Firestore operations for posts and comments (`listenToPosts`, `createPost`, `addCommentToPost`, `getPostById`)
+
 ### Data Flow
 
-**Post Creation**:
+**Authentication Flow**:
+1. User signs up or logs in via `AuthContext` methods (`signup`, `login`, `loginWithGoogle`)
+2. Firebase Auth creates/authenticates user account
+3. User profile is stored/retrieved from Firestore `users` collection
+4. `onAuthStateChanged` listener keeps authentication state synchronized
+5. `useAuth()` hook provides access to `currentUser` and `userProfile` throughout the app
+
+**Post Creation Flow**:
 1. User fills `PostForm` with title, content, and multiple images
-2. Images can be processed with background removal via remove.bg API (optional)
+2. Images can be processed with background removal via backend `/remove-bg` endpoint (proxies to remove.bg API)
 3. Content moderation check: `PostForm` sends `title + content` to backend `/moderation` endpoint
 4. Backend uses Google Perspective API to analyze content for toxicity, threats, insults, profanity, identity attacks
 5. If flagged (score >= 0.5 threshold), post is blocked with specific violation reasons shown to user
-6. If approved, images are converted from Blob URLs to Base64 for localStorage storage
-7. New post is prepended to board's post array
-8. Post data saved to `localStorage` with key `boardPosts_${boardName}`
+6. If approved, post data is sent to Firestore via `createPost()` from `postService.js`
+7. Firestore generates unique post ID and stores post with: `title`, `content`, `boardName`, `authorId`, `authorName`, `imageUrls`, `createdAt`, `commentCount`, `comments`
+8. `onSnapshot` listener automatically updates UI for all connected clients in real-time
 
-**Post Viewing**:
-1. Board loads posts from localStorage on mount (via `useEffect`)
-2. Posts display first image as thumbnail
-3. Clicking post opens `PostDetailPage` showing all images and comments
-4. Comments are stored as arrays within each post object
+**Post Viewing Flow**:
+1. `BoardTemplate` sets up `onSnapshot` listener via `listenToPosts()` when component mounts
+2. Posts are fetched from Firestore filtered by `boardName` and sorted by `createdAt` (descending)
+3. Real-time updates: any changes to posts automatically trigger UI refresh
+4. Clicking a post navigates to `PostDetailPage` which loads full post data via `getPostById()`
+5. Comments are stored in the `comments` array field within each post document
 
-**Content Moderation**:
-- Backend (`backend/server.js`) provides a `/moderation` endpoint using Google Perspective API
-- Checks for: TOXICITY, SEVERE_TOXICITY, IDENTITY_ATTACK, INSULT, PROFANITY, THREAT
-- Uses configurable threshold (default: 0.5) to flag inappropriate content
-- Supports Chinese and English language detection
-- Frontend blocks submission if content is flagged
+**Comment Flow**:
+1. User submits comment on `PostDetailPage`
+2. `addCommentToPost()` fetches current post, appends new comment to `comments` array
+3. Firestore document is updated with new comment and incremented `commentCount`
+4. `onSnapshot` listener triggers re-render with updated data
 
 ### Styling
 The application uses inline styles with a consistent color palette:
@@ -96,31 +116,54 @@ The application uses inline styles with a consistent color palette:
 - `COLOR_BRICK_RED` (#c9362a) - Links and primary buttons
 - `COLOR_OFF_WHITE` (#f3f3e6) - Background/secondary elements
 
-### External APIs
-- **Remove.bg API**: Used in `PostForm` (line 6) for image background removal. API key is hardcoded in component.
-- **Google Perspective API**: Used by backend for content moderation. Requires `PERSPECTIVE_API_KEY` in backend `.env` file.
+### External APIs & Services
+
+**Backend API Endpoints** (hosted on Render):
+- `POST /moderation` - Content moderation using Google Perspective API
+  - Request body: `{ content: string }`
+  - Returns: `{ flagged: boolean, categories: object }`
+- `POST /remove-bg` - Image background removal proxy
+  - Accepts multipart form data with `image_file`
+  - Returns PNG image data
+
+**Firebase Services**:
+- **Firestore Collections**:
+  - `users` - User profiles with fields: `uid`, `email`, `nickname`, `avatar`, `bio`, `user_login`, `first_name`, `last_name`, `gender`, `createdAt`
+  - `posts` - Posts with fields: `title`, `content`, `boardName`, `authorId`, `authorName`, `imageUrls` (array), `createdAt` (Timestamp), `commentCount`, `comments` (array)
+- **Firebase Auth** - Email/Password and Google OAuth authentication
+- **Firebase Storage** - Configured but not actively used (images currently stored as Base64 in `imageUrls`)
 
 ## Important Implementation Details
 
 ### Authentication System
 - **AuthContext** (`src/contexts/AuthContext.js`) manages global authentication state using React Context API
 - Supports Email/Password authentication and Google OAuth via Firebase Auth
-- User profiles stored in Firestore `users` collection with fields: `uid`, `email`, `nickname`, `avatar`, `bio`, etc.
+- User profiles stored in Firestore `users` collection
 - `onAuthStateChanged` listener automatically loads user profile from Firestore when auth state changes
-- `useAuth()` hook provides access to: `currentUser`, `userProfile`, `signup`, `login`, `loginWithGoogle`, `logout`, `resetPassword`
+- `useAuth()` hook provides access to: `currentUser`, `userProfile`, `signup`, `login`, `loginWithGoogle`, `logout`, `resetPassword`, `loadUserProfile`
 - New users automatically get a Firestore document created with default profile data
+- Google login users get Firestore profile created on first login if it doesn't exist
 
 ### Board Data Isolation
-Each board maintains separate localStorage entries. When switching boards, `BoardTemplate` uses `useEffect` with `boardName` dependency to load the correct board's posts. Never mix data between boards.
+Each board's posts are isolated by the `boardName` field in Firestore. The `listenToPosts()` function filters posts using `where('boardName', '==', boardName)` to ensure only relevant posts are fetched.
+
+### Real-time Synchronization
+The application uses Firestore's `onSnapshot` for real-time updates:
+- When any user creates a post, all connected clients see it immediately
+- When any user adds a comment, the post updates for all viewers
+- `BoardTemplate` sets up listener on mount and cleans up on unmount via `useEffect` return function
 
 ### Image Storage Strategy
-Images are stored as Base64 strings in localStorage (converted from Blob URLs). This allows offline persistence but has size limitations. For production, consider migrating to Firebase Storage and storing URLs instead.
+Images are currently stored as Base64 strings in the `imageUrls` array field within Firestore documents. This has size limitations and is not optimal for production. For better performance, consider migrating to Firebase Storage and storing download URLs instead.
 
 ### Chat Widget
-Each board has an independent real-time chat widget (`ChatWidget` component) with local state only - messages are not persisted and reset on page refresh. Located within `BoardTemplate.js`.
+Each board has an independent chat widget (`ChatWidget` component) with **local state only** - messages are not persisted to Firestore and reset on page refresh. This is intentional for the current implementation.
 
 ### Comment System
-Comments are nested within post objects (`post.comments` array). When adding a comment, the entire posts array is updated and re-saved to localStorage. The `PostDetailPage` receives updated post object via `setSelectedPost` to trigger re-render.
+Comments are stored as an array (`comments`) within each post document in Firestore. When adding a comment via `addCommentToPost()`:
+1. The function fetches the current post using `getDoc()`
+2. Appends the new comment to the existing `comments` array
+3. Updates the document using `updateDoc()` with the new array and incremented `commentCount`
 
 ## Common Development Tasks
 
@@ -132,16 +175,20 @@ Comments are nested within post objects (`post.comments` array). When adding a c
 
 **Modifying board UI**: Edit `BoardTemplate.js` - changes will apply to all boards
 
-**Changing post structure**: Update the post object shape in `handleNewPostSubmit` in `BoardTemplate.js` (line 257) and ensure localStorage compatibility
+**Changing post structure**:
+- Update the post object shape in `createPost()` in `src/services/postService.js`
+- Ensure changes are compatible with `BoardTemplate` and `PostDetailPage` rendering logic
 
-**Adjusting moderation sensitivity**: Modify `THRESHOLD` constant in `backend/server.js` (line 21). Range is 0.0-1.0, where higher values = less strict.
+**Adjusting moderation sensitivity**: Modify `THRESHOLD` constant in `backend/server.js` (line 26). Range is 0.0-1.0, where higher values = less strict.
+
+**Backend deployment**: The backend is configured for Render deployment with `HOST = '0.0.0.0'` and `PORT` from environment variables (defaults to 10000).
 
 ## Current Limitations
 
-- Posts and comments stored in localStorage (not persistent across devices/users)
+- Images stored as Base64 in Firestore (size limitations, not optimal for performance)
 - Chat messages not persisted (reset on page refresh)
-- Images stored as Base64 in localStorage (size limitations)
-- Backend API keys hardcoded in frontend (security concern for production)
-- No user permission system for edit/delete operations
-- Member directory uses mock data (not integrated with Firebase users collection)
-
+- No user permission system for edit/delete operations on posts/comments
+- Member directory may use mock data (not fully integrated with Firebase users collection)
+- No pagination for posts (all posts loaded at once via `onSnapshot`)
+- No search/filter functionality for posts
+- Content moderation only checks text, not images

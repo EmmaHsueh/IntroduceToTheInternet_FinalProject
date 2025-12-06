@@ -37,7 +37,8 @@ const RegistrationForm = ({ switchToLogin }) => {
     });
     // 新增狀態來儲存自訂圖片的本地 URL，用於即時預覽
     const [customAvatarUrl, setCustomAvatarUrl] = useState(null);
-    const [registrationStatus, setRegistrationStatus] = useState(''); // 用於取代 alert
+    const [registrationStatus, setRegistrationStatus] = useState(''); // 用於檔案上傳狀態
+    const [success, setSuccess] = useState(''); // 用於註冊成功訊息
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -79,6 +80,7 @@ const RegistrationForm = ({ switchToLogin }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setSuccess('');
         setRegistrationStatus('');
         setLoading(true);
 
@@ -101,7 +103,7 @@ const RegistrationForm = ({ switchToLogin }) => {
                 bio: '這個人很懶，什麼都沒留下。'
             });
 
-            setRegistrationStatus('註冊成功！即將跳轉至首頁...');
+            setSuccess('✅ 註冊成功！即將跳轉至首頁...');
             setTimeout(() => {
                 navigate('/');
             }, 1500);
@@ -261,6 +263,23 @@ const RegistrationForm = ({ switchToLogin }) => {
                         border: `1px solid ${COLOR_BRICK_RED}`
                     }}>
                         ⚠️ {error}
+                    </div>
+                )}
+
+                {/* 成功訊息 */}
+                {success && (
+                    <div style={{
+                        backgroundColor: '#d4edda',
+                        color: '#155724',
+                        padding: '12px',
+                        borderRadius: '6px',
+                        marginBottom: '20px',
+                        fontSize: '14px',
+                        border: '1px solid #c3e6cb',
+                        textAlign: 'center',
+                        fontWeight: '500'
+                    }}>
+                        {success}
                     </div>
                 )}
 

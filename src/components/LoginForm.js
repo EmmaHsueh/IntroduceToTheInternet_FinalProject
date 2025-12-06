@@ -17,6 +17,7 @@ const LoginForm = ({ switchToRegister }) => {
     const [email, setEmail] = useState(''); // 改用 email
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
 
     const { login, loginWithGoogle } = useAuth();
@@ -26,11 +27,16 @@ const LoginForm = ({ switchToRegister }) => {
     const handleLogin = async (e) => {
         e.preventDefault();
         setError('');
+        setSuccess('');
         setLoading(true);
 
         try {
             await login(email, password);
-            navigate('/'); // 登入成功後導向首頁
+            setSuccess('✅ 登入成功！即將跳轉到首頁...');
+            // 延遲跳轉，讓用戶看到成功訊息
+            setTimeout(() => {
+                navigate('/');
+            }, 1500);
         } catch (error) {
             console.error('登入錯誤:', error);
             // 顯示友善的錯誤訊息
@@ -53,15 +59,18 @@ const LoginForm = ({ switchToRegister }) => {
     // 🔐 Google 登入
     const handleGoogleLogin = async () => {
         setError('');
+        setSuccess('');
         setLoading(true);
 
         try {
             await loginWithGoogle();
-            navigate('/');
+            setSuccess('✅ Google 登入成功！即將跳轉到首頁...');
+            setTimeout(() => {
+                navigate('/');
+            }, 1500);
         } catch (error) {
             console.error('Google 登入錯誤:', error);
             setError('Google 登入失敗');
-        } finally {
             setLoading(false);
         }
     };
@@ -143,6 +152,23 @@ const LoginForm = ({ switchToRegister }) => {
                     </div>
                 )}
 
+                {/* 成功訊息 */}
+                {success && (
+                    <div style={{
+                        backgroundColor: '#d4edda',
+                        color: '#155724',
+                        padding: '12px',
+                        borderRadius: '6px',
+                        marginBottom: '20px',
+                        fontSize: '14px',
+                        border: '1px solid #c3e6cb',
+                        textAlign: 'center',
+                        fontWeight: '500'
+                    }}>
+                        {success}
+                    </div>
+                )}
+
                 {/* Email */}
                 <div style={{ marginBottom: '20px' }}>
                     <label style={labelStyle}>Email:</label>
@@ -180,8 +206,12 @@ const LoginForm = ({ switchToRegister }) => {
                         type="submit"
                         style={{
                             ...submitButtonStyle,
-                            opacity: loading ? 0.6 : 1,
-                            cursor: loading ? 'not-allowed' : 'pointer'
+                            opacity: loading ? 0.8 : 1,
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '10px'
                         }}
                         disabled={loading}
                         onMouseOver={e => {
@@ -197,8 +227,25 @@ const LoginForm = ({ switchToRegister }) => {
                             }
                         }}
                     >
+                        {loading && (
+                            <div style={{
+                                width: '16px',
+                                height: '16px',
+                                border: '2px solid white',
+                                borderTopColor: 'transparent',
+                                borderRadius: '50%',
+                                animation: 'spin 0.8s linear infinite'
+                            }}></div>
+                        )}
                         {loading ? '登入中...' : '登入'}
                     </button>
+                    {loading && (
+                        <style>{`
+                            @keyframes spin {
+                                to { transform: rotate(360deg); }
+                            }
+                        `}</style>
+                    )}
                 </div>
             </form>
 
@@ -262,13 +309,24 @@ const LoginForm = ({ switchToRegister }) => {
                         }
                     }}
                 >
-                    <svg width="18" height="18" viewBox="0 0 18 18">
-                        <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
-                        <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
-                        <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707 0-.593.102-1.17.282-1.709V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.335z"/>
-                        <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
-                    </svg>
-                    使用 Google 帳號登入
+                    {loading ? (
+                        <div style={{
+                            width: '18px',
+                            height: '18px',
+                            border: '2px solid #666',
+                            borderTopColor: 'transparent',
+                            borderRadius: '50%',
+                            animation: 'spin 0.8s linear infinite'
+                        }}></div>
+                    ) : (
+                        <svg width="18" height="18" viewBox="0 0 18 18">
+                            <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
+                            <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                            <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707 0-.593.102-1.17.282-1.709V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.335z"/>
+                            <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/>
+                        </svg>
+                    )}
+                    {loading ? '登入中...' : '使用 Google 帳號登入'}
                 </button>
             </div>
             
