@@ -17,8 +17,8 @@ if (!process.env.GEMINI_API_KEY) {
     // process.exit(1);
 }
 
-//const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const genAI = new GoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+//const genAI = new GoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const app = express();
 app.use(cors({
