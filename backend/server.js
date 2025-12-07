@@ -17,9 +17,7 @@ if (!process.env.GEMINI_API_KEY) {
     // process.exit(1);
 }
 
-const genAI = new GoogleGenerativeAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const app = express();
 app.use(cors());
@@ -266,64 +264,47 @@ app.post("/chat", async (req, res) => {
       case "funny":
         persona = "你是一位搞笑學長，講話幽默風趣、有點白爛但善良。回答時使用輕鬆、愛開玩笑的語氣，並加入學長的稱謂。";
         break;
-      default: // 'big'
-        persona = "你是一隻笨笨但可愛的大笨鳥，語氣呆萌。回答時使用簡單、遲鈍的語氣，並自稱大笨鳥。";
+      default:
+        persona = "你是一隻笨笨但可愛的大笨鳥，語氣呆萌。回答時像好朋友一樣提供滿滿的情緒價值，並自稱大笨鳥。";
     }
 
-    // 2. 執行 RAG 檢索
+    // 2. RAG
     const facts = retrieveFacts(message, role);
     let context = "";
-
     if (facts.length > 0) {
-        context = "【檢索到的師大校園資訊 (RAG)】\n" + facts.map(f => `- ${f}`).join('\n');
+      context = "【檢索到的師大校園資訊 (RAG)】\n" + facts.map(f => `- ${f}`).join('\n');
     } else {
-        context = "【檢索到的師大校園資訊 (RAG)】\n無相關資訊。\n";
+      context = "【檢索到的師大校園資訊 (RAG)】\n無相關資訊。\n";
     }
 
-    // 3. 建構最終 Prompt
+    // 3. Prompt
     const prompt = `
 角色設定：${persona}
-請根據以下提供的師大校園資訊，並結合你的角色風格來回應使用者訊息。
-如果檢索到的資訊與使用者問題相關，請**務必**將資訊融入回覆中。
-如果沒有檢索到相關資訊，則以你的角色風格對使用者訊息進行自由回答。
-
 ${context}
 
 使用者訊息：${message}
-你的回答：
-    `;
+請根據角色風格回應：
+    `;
 
-    // 💥 修正開始 💥
-    // 1. 取得特定的 GenerativeModel 實例
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); //
+    // ✔ 正確 SDK 使用方式
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    // 2. 在 model 實例上呼叫 generateContent
-    const result = await model.generateContent({ //
-      contents: [{ role: "user", parts: [{ text: prompt }] }], //
-      config: { //
-          temperature: 0.7, //
-          maxOutputTokens: 300, //
-      } //
-    }); //
-    // 💥 修正結束 💥
+    const result = await model.generateContent(prompt);
 
-    // 處理 result.text
-    const aiText = result.text || "抱歉，AI 尚未回覆";
+    const aiText = result.response.text();
 
-    res.json({ reply: aiText });
+    res.json({ reply: aiText });
+
   } catch (err) {
-    // 輸出完整錯誤到後端 Console
-    console.error("Gemini API 錯誤：", err);
-    
-    // 將錯誤信息回傳給前端（如果err有message，就回傳，否則回傳通用錯誤）
-    const detailedError = (err.message || '無法連線到 AI 服務').slice(0, 100);
-    res.status(500).json({ reply: `AI 服務錯誤：${detailedError}` });
-  }
+    console.error("Gemini API 錯誤：", err);
+    const detailedError = (err.message || '無法連線到 AI 服務').slice(0, 100);
+    res.status(500).json({ reply: `AI 服務錯誤：${detailedError}` });
+  }
 });
 
 const PORT = process.env.PORT || 10000;
 const HOST = '0.0.0.0'; // 這是關鍵！Render 需要這個才能連線
 
 app.listen(PORT, HOST, () => {
-  console.log(`Server running on http://${HOST}:${PORT}`);
+  console.log(`Server running on http://${HOST}:${PORT}`);
 });
