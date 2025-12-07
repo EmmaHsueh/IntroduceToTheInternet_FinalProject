@@ -7,7 +7,6 @@ import axios from "axios";       // 新增: 發送 HTTP 請求
 import FormData from "form-data";// 新增: 建構 multipart/form-data
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-
 dotenv.config();
 
 // 🎯 關鍵檢查點：確認 Key 是否被載入
@@ -313,33 +312,36 @@ ${context}
 // 4. 翻譯 Endpoint
 // ----------------------------------------
 app.post("/api/translate", async (req, res) => {
-  const { text, targetLang } = req.body;
-
-  if (!text || !targetLang) {
-    return res.status(400).json({ error: "text 與 targetLang 為必填" });
-  }
+  const { title, content, targetLanguage } = req.body;
 
   try {
-    // 這裡使用 Gemini 生成翻譯
-    const prompt = `
-將以下中文翻譯成 ${targetLang}：
-${text}
+    const fetch = (await import("node-fetch")).default;
 
-請保留原文意思，保持簡潔明瞭。
-    `;
+    const translateText = async (text) => {
+      if (!text) return "";
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent(prompt);
-    const translatedText = result.response.text();
+      const encodedText = encodeURIComponent(text);
+      const langPair = `zh-CN|${targetLanguage}`;
 
-    res.json({ translatedText });
+      const url = `https://api.mymemory.translated.net/get?q=${encodedText}&langpair=${langPair}`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      // MyMemory 返回結構 data.responseData.translatedText
+      return data.responseData.translatedText;
+    };
+
+    const translatedTitle = await translateText(title);
+    const translatedContent = await translateText(content);
+
+    res.json({ translatedTitle, translatedContent });
 
   } catch (err) {
-    console.error("翻譯 API 錯誤：", err.message);
-    res.status(500).json({ error: "翻譯服務暫時無法使用" });
+    console.error("翻譯失敗:", err);
+    res.status(500).json({ error: "翻譯失敗，請稍後再試。" });
   }
 });
-
 
 
 const PORT = process.env.PORT || 10000;

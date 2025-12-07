@@ -1,8 +1,6 @@
 // src/pages/PostDetailPage.js
 import React, { useState } from 'react';
-// 這裡假設 Comment 組件已在 BoardTemplate.js 或其他地方正確定義並傳入
 
-// 統一配色定義 (略)
 const COLOR_DEEP_NAVY = '#1e2a38'; 	 
 const COLOR_MORANDI_BROWN = '#a38c6b'; 
 const COLOR_BRICK_RED = '#c9362a'; 	 
@@ -14,234 +12,249 @@ const COLOR_HIGHLIGHT_LINE = COLOR_MORANDI_BROWN;
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:10000";
 
-// 這裡假設 Comment 組件可以被 PostDetailPage 訪問，如果不行，需要將其定義從 BoardTemplate.js 移出或傳入
 const Comment = ({ comment }) => (
-	<div style={{ display: 'flex', padding: '15px 0', borderBottom: `1px dashed ${COLOR_BORDER}`, alignItems: 'flex-start' }}>
-		{/* ... (Comment JSX 內容) ... */}
-		{/* 頭像 */}
-		<div style={{ width: '40px', marginRight: '15px', flexShrink: 0 }}>
-			<div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: COLOR_BORDER, display: 'flex', justifyContent: 'center', alignItems: 'center', color: COLOR_SECONDARY_TEXT, fontWeight: 'bold' }}>
-				{comment.authorName ? comment.authorName.charAt(0) : 'U'}
-			</div>
-		</div>
-		{/* 內容 */}
-		<div style={{ flexGrow: 1 }}>
-			<div style={{ fontWeight: '600', fontSize: 'small', color: COLOR_DEEP_NAVY }}>{comment.authorName || '匿名用戶'}</div>
-			<div style={{ fontSize: 'x-small', color: COLOR_SECONDARY_TEXT, marginBottom: '5px' }}>
-				<time>{comment.date}</time>
-			</div>
-			<p style={{ margin: '0 0 10px 0', color: COLOR_DEEP_NAVY }}>{comment.content}</p>
-		</div>
-	</div>
+  <div style={{ display: 'flex', padding: '15px 0', borderBottom: `1px dashed ${COLOR_BORDER}`, alignItems: 'flex-start' }}>
+    <div style={{ width: '40px', marginRight: '15px', flexShrink: 0 }}>
+      <div style={{
+        width: '40px', height: '40px', borderRadius: '50%', backgroundColor: COLOR_BORDER,
+        display: 'flex', justifyContent: 'center', alignItems: 'center',
+        color: COLOR_SECONDARY_TEXT, fontWeight: 'bold'
+      }}>
+        {comment.authorName ? comment.authorName.charAt(0) : 'U'}
+      </div>
+    </div>
+    <div style={{ flexGrow: 1 }}>
+      <div style={{ fontWeight: '600', fontSize: 'small', color: COLOR_DEEP_NAVY }}>{comment.authorName || '匿名用戶'}</div>
+      <div style={{ fontSize: 'x-small', color: COLOR_SECONDARY_TEXT, marginBottom: '5px' }}>
+        <time>{comment.date}</time>
+      </div>
+      <p style={{ margin: '0 0 10px 0', color: COLOR_DEEP_NAVY }}>{comment.content}</p>
+    </div>
+  </div>
 );
 
-
 const PostDetailPage = ({ post, onBack, onAddComment }) => {
-	const [commentContent, setCommentContent] = useState('');
-	const [translatedContent, setTranslatedContent] = useState(null);
+  const [postState, setPostState] = useState(post);
+  const [originalPost] = useState(post); // 保存原文
+  const [targetLanguage, setTargetLanguage] = useState("zh-TW");
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [commentContent, setCommentContent] = useState("");
 
-	const handleCommentSubmit = (e) => {
-		e.preventDefault();
-		if (commentContent.trim()) {
-			// 由於 BoardTemplate.js 中的 Comment 組件沒有 authorName，我們在這裡為模擬數據添加一個
-			// 註：實際應用中，authorName 應該來自當前登入的使用者資訊
-			onAddComment(post.id, commentContent, "當前用戶(您)"); 
-			setCommentContent('');
-		} else {
-			// 🏆 修正: 替換 alert 為 console.error 或忽略，因為 alert 不會在 Immersive 環境中顯示
-			console.error('留言內容不能為空！'); 
-		}
-	};
+  const handleTranslate = async () => {
+    setIsTranslating(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/translate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: postState.title,
+          content: postState.content,
+          targetLanguage,
+        }),
+      });
 
-	const handleTranslate = async () => {
-		if(translatedContent) {
-			setTranslatedContent(null);
-			return;
-		}
-		try {
-			const res = await fetch(`${API_BASE}/api/translate`, {
-			method: 'POST',
-			headers: { 
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({ text: post.content, targetLang: 'en' })
-			});
-			if (!res.ok) {
-			const err = await res.json();
-			console.error("翻譯錯誤:", err);
-			return;
-			}
-			const data = await res.json();
-			console.log("翻譯結果:", data);
-			setTranslatedContent(data.translatedText);
-		} catch (err) {
-			console.error("Fetch 錯誤:", err);
-		}
-		};
+      const data = await res.json();
+      setPostState(prev => ({
+        ...prev,
+        title: data.translatedTitle,
+        content: data.translatedContent,
+      }));
+    } catch (error) {
+      console.error("翻譯失敗:", error);
+    }
+    setIsTranslating(false);
+  };
 
-	const BACK_BUTTON_STYLE = {
-		padding: '10px 20px',
-		marginBottom: '25px', // 增加一點間距
-		backgroundColor: COLOR_OFF_WHITE,
-		color: COLOR_DEEP_NAVY,
-		border: `1px solid ${COLOR_BORDER}`,
-		borderRadius: '6px',
-		cursor: 'pointer',
-		fontWeight: '600',
-		transition: 'all 0.3s',
-		boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-	};
+  const handleCancelTranslate = () => {
+    setPostState(originalPost);
+  };
 
-	const COMMENT_BUTTON_STYLE = {
-		padding: '10px 20px',
-		backgroundColor: COLOR_BRICK_RED,
-		color: 'white',
-		border: 'none',
-		borderRadius: '6px',
-		cursor: 'pointer',
-		marginTop: '10px',
-		fontWeight: 'bold',
-		transition: 'background-color 0.3s'
-	};
-	const TEXTAREA_STYLE = {
-		width: '100%',
-		height: '100px',
-		padding: '12px',
-		boxSizing: 'border-box',
-		border: `1px solid ${COLOR_BORDER}`,
-		borderRadius: '6px',
-		resize: 'vertical',
-		marginBottom: '10px', 
-		fontSize: '14px',
-		lineHeight: '1.5',
-		outline: 'none',
-		transition: 'border-color 0.3s'
-	};
-	
-	return (
-		<div style={{ margin: "40px auto", padding: "0 20px", maxWidth: "900px" }}>
-			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-				{/* 返回按鈕 */}
-				<button 
-					onClick={onBack}
-					style={BACK_BUTTON_STYLE}
-					onMouseOver={e => {
-						e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN;
-						e.currentTarget.style.color = 'white';
-					}}
-					onMouseOut={e => {
-						e.currentTarget.style.backgroundColor = COLOR_OFF_WHITE;
-						e.currentTarget.style.color = COLOR_DEEP_NAVY;
-					}}
-				>
-					← 返回文章列表
-				</button>
+  const handleCommentSubmit = (e) => {
+    e.preventDefault();
+    if (commentContent.trim()) {
+      onAddComment(postState.id, commentContent, "當前用戶(您)"); 
+      setCommentContent('');
+    } else {
+      console.error('留言內容不能為空！'); 
+    }
+  };
 
-				{/* 翻譯按鈕 */}
-				<button 
-					onClick={handleTranslate}
-					style={{
-						...BACK_BUTTON_STYLE,
-						backgroundColor: COLOR_BRICK_RED,
-						color: 'white'
-					}}
-					onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN}
-					onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_BRICK_RED}
-				>
-					翻譯
-				</button>
-			</div>
+  const BUTTON_STYLE = {
+    padding: '10px 20px',
+    backgroundColor: COLOR_BRICK_RED,
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    marginLeft: '10px',
+    transition: 'background-color 0.3s'
+  };
 
+  const BUTTON_HOVER_STYLE = {
+    backgroundColor: COLOR_MORANDI_BROWN
+  };
 
-			{/* 文章內容 */}
-			<div style={{ marginBottom: '30px', padding: '20px', backgroundColor: COLOR_BACKGROUND_LIGHT, border: `1px solid ${COLOR_BORDER}`, borderRadius: '8px' }}>
-				<h1 style={{ 
-					marginTop: '0', 
-					borderBottom: `2px solid ${COLOR_HIGHLIGHT_LINE}`, 
-					paddingBottom: '10px',
-					color: COLOR_DEEP_NAVY,
-					fontWeight: '500'
-				}}>
-					{post.title}
-				</h1>
-				<div style={{ fontSize: 'small', color: COLOR_SECONDARY_TEXT, marginBottom: '20px' }}>
-					作者: **{post.author}** | 發表於: {post.date}
-				</div>
-				
-				{/* 顯示貼文所有圖片 */}
-				{post.imageUrls && post.imageUrls.length > 0 && (
-					<div style={{ marginBottom: '20px', display: 'flex', flexWrap: 'wrap', gap: '15px', justifyContent: 'center' }}>
-						{post.imageUrls.map((url, index) => (
-							<img 
-								key={index}
-								src={url} 
-								alt={`貼文圖片 ${index + 1}`} 
-								style={{ 
-									maxWidth: '100%', 
-									maxHeight: '300px', 
-									width: 'auto', 
-									height: 'auto', 
-									objectFit: 'contain', 
-									borderRadius: '8px', 
-									border: `1px solid ${COLOR_BORDER}` 
-								}}
-							/>
-						))}
-					</div>
-				)}
-				
-				<p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', color: COLOR_DEEP_NAVY }}>
-					{translatedContent || post.content}
-				</p>
-			</div>
+  const TEXTAREA_STYLE = {
+    width: '100%',
+    height: '100px',
+    padding: '12px',
+    boxSizing: 'border-box',
+    border: `1px solid ${COLOR_BORDER}`,
+    borderRadius: '6px',
+    resize: 'vertical',
+    marginBottom: '10px', 
+    fontSize: '14px',
+    lineHeight: '1.5',
+    outline: 'none',
+    transition: 'border-color 0.3s'
+  };
 
-			{/* 留言列表... */}
-			<h3 style={{ 
-				borderBottom: `1px solid ${COLOR_HIGHLIGHT_LINE}`, 
-				paddingBottom: '5px', 
-				marginBottom: '15px',
-				color: COLOR_DEEP_NAVY
-			}}>
-				留言 ({post.comments ? post.comments.length : 0})
-			</h3>
-			<div style={{ marginBottom: '30px' }}>
-				{post.comments?.length > 0 ? (
-					// 留言反轉排序，讓最新留言在最上方
-					post.comments.slice().reverse().map(comment => (
-						<Comment key={comment.id} comment={comment} /> 
-					))
-				) : (
-					<div style={{ textAlign: 'center', color: COLOR_SECONDARY_TEXT, padding: '20px', backgroundColor: COLOR_OFF_WHITE, borderRadius: '8px' }}>
-						這篇文章還沒有人留言，快來搶沙發吧！
-					</div>
-				)}
-			</div>
+  const SELECT_STYLE = {
+    padding: '10px',
+    borderRadius: '6px',
+    border: `1px solid ${COLOR_BORDER}`,
+    backgroundColor: COLOR_OFF_WHITE,
+    cursor: 'pointer',
+    fontWeight: '600',
+    marginRight: '10px'
+  };
 
-			{/* 留言表單 */}
-			<div style={{ paddingTop: '20px', borderTop: `1px solid ${COLOR_BORDER}` }}>
-				<h3 style={{ marginBottom: '15px', color: COLOR_DEEP_NAVY }}>發表你的評論</h3>
-				<form 
-					onSubmit={handleCommentSubmit}
-					// 使用 flexbox 使 textarea 和按鈕可以堆疊，並讓按鈕靠右
-					style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }} 
-				>
-					<textarea 
-						value={commentContent}
-						onChange={(e) => setCommentContent(e.target.value)}
-						placeholder="留下您的評論..."
-						style={{ ...TEXTAREA_STYLE, marginBottom: '0' }} // 讓 textarea 充滿父層寬度
-					/>
-					<button 
-						type="submit"
-						style={COMMENT_BUTTON_STYLE}
-						onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN}
-						onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_BRICK_RED}
-					>
-						送出留言
-					</button>
-				</form>
-			</div>
-		</div>
-	);
+  return (
+    <div style={{ margin: "40px auto", padding: "0 20px", maxWidth: "900px" }}>
+
+      {/* 上方按鈕列 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+        <button 
+          onClick={onBack}
+          style={BUTTON_STYLE}
+          onMouseOver={e => e.currentTarget.style.backgroundColor = BUTTON_HOVER_STYLE.backgroundColor}
+          onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_BRICK_RED}
+        >
+          ← 返回文章列表
+        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <select
+            value={targetLanguage}
+            onChange={(e) => setTargetLanguage(e.target.value)}
+            style={SELECT_STYLE}
+          >
+            <option value="en">English</option>
+            <option value="zh-TW">繁體中文</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+            <option value="es">Español</option>
+          </select>
+
+          <button
+            onClick={handleTranslate}
+            disabled={isTranslating}
+            style={BUTTON_STYLE}
+            onMouseOver={e => e.currentTarget.style.backgroundColor = BUTTON_HOVER_STYLE.backgroundColor}
+            onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_BRICK_RED}
+          >
+            {isTranslating ? "翻譯中…" : "翻譯貼文"}
+          </button>
+
+          <button
+            onClick={handleCancelTranslate}
+            style={BUTTON_STYLE}
+            onMouseOver={e => e.currentTarget.style.backgroundColor = BUTTON_HOVER_STYLE.backgroundColor}
+            onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_BRICK_RED}
+          >
+            取消翻譯
+          </button>
+        </div>
+      </div>
+
+      {/* 文章內容 */}
+      <div style={{ marginBottom: '30px', padding: '20px', backgroundColor: COLOR_BACKGROUND_LIGHT, border: `1px solid ${COLOR_BORDER}`, borderRadius: '8px' }}>
+        <h1 style={{ 
+          marginTop: '0', 
+          borderBottom: `2px solid ${COLOR_HIGHLIGHT_LINE}`, 
+          paddingBottom: '10px',
+          color: COLOR_DEEP_NAVY,
+          fontWeight: '500'
+        }}>
+          {postState.title}
+        </h1>
+        <div style={{ fontSize: 'small', color: COLOR_SECONDARY_TEXT, marginBottom: '20px' }}>
+          作者: **{postState.author}** | 發表於: {postState.date}
+        </div>
+        
+        {postState.imageUrls && postState.imageUrls.length > 0 && (
+          <div style={{ marginBottom: '20px', display: 'flex', flexWrap: 'wrap', gap: '15px', justifyContent: 'center' }}>
+            {postState.imageUrls.map((url, index) => (
+              <img 
+                key={index}
+                src={url} 
+                alt={`貼文圖片 ${index + 1}`} 
+                style={{ 
+                  maxWidth: '100%', 
+                  maxHeight: '300px', 
+                  width: 'auto', 
+                  height: 'auto', 
+                  objectFit: 'contain', 
+                  borderRadius: '8px', 
+                  border: `1px solid ${COLOR_BORDER}` 
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        <p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', color: COLOR_DEEP_NAVY }}>
+          {postState.content}
+        </p>
+      </div>
+
+      {/* 留言列表 */}
+      <h3 style={{ 
+        borderBottom: `1px solid ${COLOR_HIGHLIGHT_LINE}`, 
+        paddingBottom: '5px', 
+        marginBottom: '15px',
+        color: COLOR_DEEP_NAVY
+      }}>
+        留言 ({postState.comments ? postState.comments.length : 0})
+      </h3>
+      <div style={{ marginBottom: '30px' }}>
+        {postState.comments?.length > 0 ? (
+          postState.comments.slice().reverse().map(comment => (
+            <Comment key={comment.id} comment={comment} /> 
+          ))
+        ) : (
+          <div style={{ textAlign: 'center', color: COLOR_SECONDARY_TEXT, padding: '20px', backgroundColor: COLOR_OFF_WHITE, borderRadius: '8px' }}>
+            這篇文章還沒有人留言，快來搶沙發吧！
+          </div>
+        )}
+      </div>
+
+      {/* 留言表單 */}
+      <div style={{ paddingTop: '20px', borderTop: `1px solid ${COLOR_BORDER}` }}>
+        <h3 style={{ marginBottom: '15px', color: COLOR_DEEP_NAVY }}>發表你的評論</h3>
+        <form 
+          onSubmit={handleCommentSubmit}
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }} 
+        >
+          <textarea 
+            value={commentContent}
+            onChange={(e) => setCommentContent(e.target.value)}
+            placeholder="留下您的評論..."
+            style={{ ...TEXTAREA_STYLE, marginBottom: '0' }}
+          />
+          <button 
+            type="submit"
+            style={BUTTON_STYLE}
+            onMouseOver={e => e.currentTarget.style.backgroundColor = BUTTON_HOVER_STYLE.backgroundColor}
+            onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_BRICK_RED}
+          >
+            送出留言
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 };
+
 export default PostDetailPage;
