@@ -17,10 +17,15 @@ if (!process.env.GEMINI_API_KEY) {
     // process.exit(1);
 }
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+//const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"]
+}));
 app.use(express.json());
 
 // 設定 Multer: 使用記憶體儲存，不存入硬碟，直接轉發
@@ -303,6 +308,39 @@ ${context}
     res.status(500).json({ reply: `AI 服務錯誤：${detailedError}` });
   }
 });
+
+// ----------------------------------------
+// 4. 翻譯 Endpoint
+// ----------------------------------------
+app.post("/api/translate", async (req, res) => {
+  const { text, targetLang } = req.body;
+
+  if (!text || !targetLang) {
+    return res.status(400).json({ error: "text 與 targetLang 為必填" });
+  }
+
+  try {
+    // 這裡使用 Gemini 生成翻譯
+    const prompt = `
+將以下中文翻譯成 ${targetLang}：
+${text}
+
+請保留原文意思，保持簡潔明瞭。
+    `;
+
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const result = await model.generateContent(prompt);
+    const translatedText = result.response.text();
+
+    res.json({ translatedText });
+
+  } catch (err) {
+    console.error("翻譯 API 錯誤：", err.message);
+    res.status(500).json({ error: "翻譯服務暫時無法使用" });
+  }
+});
+
+
 
 const PORT = process.env.PORT || 10000;
 const HOST = '0.0.0.0'; // 這是關鍵！Render 需要這個才能連線

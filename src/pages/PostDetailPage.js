@@ -12,6 +12,8 @@ const COLOR_BACKGROUND_LIGHT = '#ffffff';
 const COLOR_BORDER = '#dddddd';
 const COLOR_HIGHLIGHT_LINE = COLOR_MORANDI_BROWN; 
 
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:10000";
+
 // 這裡假設 Comment 組件可以被 PostDetailPage 訪問，如果不行，需要將其定義從 BoardTemplate.js 移出或傳入
 const Comment = ({ comment }) => (
 	<div style={{ display: 'flex', padding: '15px 0', borderBottom: `1px dashed ${COLOR_BORDER}`, alignItems: 'flex-start' }}>
@@ -36,7 +38,8 @@ const Comment = ({ comment }) => (
 
 const PostDetailPage = ({ post, onBack, onAddComment }) => {
 	const [commentContent, setCommentContent] = useState('');
-	
+	const [translatedContent, setTranslatedContent] = useState(null);
+
 	const handleCommentSubmit = (e) => {
 		e.preventDefault();
 		if (commentContent.trim()) {
@@ -49,6 +52,32 @@ const PostDetailPage = ({ post, onBack, onAddComment }) => {
 			console.error('留言內容不能為空！'); 
 		}
 	};
+
+	const handleTranslate = async () => {
+		if(translatedContent) {
+			setTranslatedContent(null);
+			return;
+		}
+		try {
+			const res = await fetch(`${API_BASE}/api/translate`, {
+			method: 'POST',
+			headers: { 
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ text: post.content, targetLang: 'en' })
+			});
+			if (!res.ok) {
+			const err = await res.json();
+			console.error("翻譯錯誤:", err);
+			return;
+			}
+			const data = await res.json();
+			console.log("翻譯結果:", data);
+			setTranslatedContent(data.translatedText);
+		} catch (err) {
+			console.error("Fetch 錯誤:", err);
+		}
+		};
 
 	const BACK_BUTTON_STYLE = {
 		padding: '10px 20px',
@@ -91,21 +120,38 @@ const PostDetailPage = ({ post, onBack, onAddComment }) => {
 	
 	return (
 		<div style={{ margin: "40px auto", padding: "0 20px", maxWidth: "900px" }}>
-			{/* 新增返回文章列表按鈕 */}
-			<button 
-				onClick={onBack}
-				style={BACK_BUTTON_STYLE}
-				onMouseOver={e => {
-					e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN;
-					e.currentTarget.style.color = 'white';
-				}}
-				onMouseOut={e => {
-					e.currentTarget.style.backgroundColor = COLOR_OFF_WHITE;
-					e.currentTarget.style.color = COLOR_DEEP_NAVY;
-				}}
-			>
-				← 返回文章列表
-			</button>
+			<div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+				{/* 返回按鈕 */}
+				<button 
+					onClick={onBack}
+					style={BACK_BUTTON_STYLE}
+					onMouseOver={e => {
+						e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN;
+						e.currentTarget.style.color = 'white';
+					}}
+					onMouseOut={e => {
+						e.currentTarget.style.backgroundColor = COLOR_OFF_WHITE;
+						e.currentTarget.style.color = COLOR_DEEP_NAVY;
+					}}
+				>
+					← 返回文章列表
+				</button>
+
+				{/* 翻譯按鈕 */}
+				<button 
+					onClick={handleTranslate}
+					style={{
+						...BACK_BUTTON_STYLE,
+						backgroundColor: COLOR_BRICK_RED,
+						color: 'white'
+					}}
+					onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN}
+					onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_BRICK_RED}
+				>
+					翻譯
+				</button>
+			</div>
+
 
 			{/* 文章內容 */}
 			<div style={{ marginBottom: '30px', padding: '20px', backgroundColor: COLOR_BACKGROUND_LIGHT, border: `1px solid ${COLOR_BORDER}`, borderRadius: '8px' }}>
@@ -144,7 +190,9 @@ const PostDetailPage = ({ post, onBack, onAddComment }) => {
 					</div>
 				)}
 				
-				<p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', color: COLOR_DEEP_NAVY }}>{post.content}</p>
+				<p style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', color: COLOR_DEEP_NAVY }}>
+					{translatedContent || post.content}
+				</p>
 			</div>
 
 			{/* 留言列表... */}
