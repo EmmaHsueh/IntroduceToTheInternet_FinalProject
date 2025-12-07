@@ -7,7 +7,7 @@ import React, { useEffect, useRef, useState } from 'react';
  * Expects a backend endpoint at POST /chat which accepts { message, role }
  * and returns JSON { reply: string }
  */
-const BACKEND_URL = 'https://introducetotheinternet-finalproject-0yrf.onrender.com';
+const BACKEND_URL = 'http://localhost:10000';
 const PERSONAS = [
   { id: 'big', label: '大笨鳥' },
   { id: 'gentle', label: '溫柔學姊' },
