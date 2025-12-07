@@ -1,7 +1,7 @@
 // src/pages/HomePage.js
 import React from 'react';
 import Header from '../components/Header';
-
+import { Link } from 'react-router-dom';
 const HeroSection = () => {
   const coverImageUrl = "https://img.rawpixel.com/s3fs-private/rawpixel_images/website_content/a017-eberhard-19-fog-lifts-up-after-raind.jpg?w=1200&h=1200&fit=clip&crop=default&dpr=1&q=75&vib=3&con=3&usm=15&cs=srgb&bg=F4F4F3&ixlib=js-2.2.1&s=f60b088dac6c7cc04eeebf67f600e079"; //
 
