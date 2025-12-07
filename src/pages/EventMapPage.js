@@ -1,9 +1,11 @@
 // src/pages/EventMapPage.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaFire, FaMapMarkerAlt, FaTimes, FaUsers, FaClock } from 'react-icons/fa'; 
+import { FaFire, FaMapMarkerAlt, FaTimes, FaUsers, FaClock, FaComment } from 'react-icons/fa'; 
 import Header from '../components/Header'; // 引入 Header 元件
+// 假設您在 EventMapPage.js 中引入了 useAuth
+import { useAuth } from '../contexts/AuthContext'; 
 
-// 顏色和樣式定義
+// 顏色和樣式定義 (保持不變)
 const COLOR_MORANDI_HIGHLIGHT = '#1e2a38'; 
 const COLOR_BRICK_RED = '#c9362a'; 
 const COLOR_PRIMARY_TEXT = '#333333';
@@ -11,7 +13,7 @@ const COLOR_SECONDARY_TEXT = '#666666';
 const COLOR_BORDER = '#dddddd';
 const COLOR_ACCENT = '#ff6b6b'; 
 
-// 校區數據 (已替換為您的實際圖片相對路徑)
+// 校區數據 (保持不變)
 const CAMPUS_DATA = {
     HEPING: { name: '和平校區 (本部)', mapUrl: '/images/hepingcampus1_0.jpg' }, 
     LIBRARY: { name: '圖書館校區', mapUrl: '/images/hepingcampus2_0.jpg' },
@@ -19,15 +21,20 @@ const CAMPUS_DATA = {
 };
 const CAMPUS_KEYS = Object.keys(CAMPUS_DATA);
 
-// 模擬即時揪團資料 (初始數據)
+// 模擬即時揪團資料 (擴充數據結構：新增 creatorId, creatorName 和 comments)
 const INITIAL_EVENTS = [
     { 
         id: 1, 
         campus: 'HEPING', 
         title: '綜合大樓前集合借書', 
         description: '急需圖書證幫忙借本書，5分鐘就好！',
-        location: { x: 300, y: 150 }, // 模擬地圖上的座標 (基於 1000x600 像素的比例)
-        endTime: Date.now() + 1000 * 60 * 35, // 35分鐘後過期
+        location: { x: 300, y: 150 },
+        endTime: Date.now() + 1000 * 60 * 35,
+        creatorId: 'user123',
+        creatorName: '王小明', // 模擬發文者
+        comments: [
+            { id: 1, userId: 'user456', userName: '陳同學', text: '我剛好要過去，我可以幫忙！', timestamp: Date.now() - 1000 * 60 * 5 },
+        ],
     },
     { 
         id: 2, 
@@ -35,30 +42,31 @@ const INITIAL_EVENTS = [
         title: '找人一起吃晚餐', 
         description: '圖書館校區附近找人吃麵，限2人。',
         location: { x: 50, y: 500 },
-        endTime: Date.now() + 1000 * 60 * 60 * 1, // 1小時後過期
+        endTime: Date.now() + 1000 * 60 * 60 * 1,
+        creatorId: 'user789',
+        creatorName: '林妹妹', // 模擬發文者
+        comments: [],
     },
 ];
 
 const EventMapPage = () => {
+    const { currentUser, userProfile } = useAuth(); // 🌟 假設從 AuthContext 取得當前用戶資訊
     const [currentCampus, setCurrentCampus] = useState(CAMPUS_KEYS[0]);
     const [events, setEvents] = useState(INITIAL_EVENTS);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [isPosting, setIsPosting] = useState(false);
-    // 儲存用戶點擊地圖時的座標，用於發布活動
     const [postLocation, setPostLocation] = useState(null); 
 
     // ----------------------
-    // 1. 即時性與自動清除邏輯
+    // 1. 即時性與自動清除邏輯 (不變)
     // ----------------------
     useEffect(() => {
         const interval = setInterval(() => {
             const now = Date.now();
-            // 過濾掉所有已經過期的活動 (實現自動消失)
             setEvents(prevEvents => 
                 prevEvents.filter(event => event.endTime > now)
             );
             
-            // 如果當前點擊的活動過期了，關閉資訊卡片
             if (selectedEvent && selectedEvent.endTime <= now) {
                 setSelectedEvent(null);
             }
@@ -69,7 +77,7 @@ const EventMapPage = () => {
 
 
     // ----------------------
-    // 2. 倒數計時器邏輯
+    // 2. 倒數計時器邏輯 (不變)
     // ----------------------
     const formatTimeRemaining = useCallback((endTime) => {
         const remainingMs = endTime - Date.now();
@@ -78,12 +86,12 @@ const EventMapPage = () => {
         const seconds = Math.floor((remainingMs / 1000) % 60);
         const minutes = Math.floor((remainingMs / 1000 / 60) % 60);
         const hours = Math.floor(remainingMs / 1000 / 60 / 60);
-        const days = Math.floor(remainingMs / 1000 / 60 / 60 / 24); // 新增天數計算
+        const days = Math.floor(remainingMs / 1000 / 60 / 60 / 24); 
         
         const pad = (num) => String(num).padStart(2, '0');
         
         if (days > 0) {
-            return `剩 ${days} 天 ${pad(hours % 24)} 小時`; // 如果超過一天顯示天數
+            return `剩 ${days} 天 ${pad(hours % 24)} 小時`;
         } else if (hours > 0) {
             return `剩 ${hours} 小時 ${pad(minutes)} 分`;
         } else if (minutes > 0) {
@@ -94,44 +102,77 @@ const EventMapPage = () => {
     }, []);
 
     // ----------------------
-    // 3. 處理新揪團發布
+    // 3. 處理新揪團發布 (新增發文者資訊)
     // ----------------------
     const handlePostEvent = (newTitle, newDescription, newEndTime, x, y) => {
-        // 🚨 這裡移除了三小時的時間限制檢查
-        
+        if (!currentUser) {
+            alert("請先登入才能發布揪團！");
+            return;
+        }
+
         const newEvent = {
-            id: Date.now(), // 使用更獨特的 ID
+            id: Date.now(), 
             campus: currentCampus,
             title: newTitle,
             description: newDescription,
             location: { x, y },
             endTime: Date.parse(newEndTime),
+            creatorId: currentUser.uid,
+            creatorName: userProfile?.name || currentUser.email.split('@')[0], // 🌟 顯示發文者
+            comments: [],
         };
         setEvents(prev => [...prev, newEvent]);
         setIsPosting(false);
-        setPostLocation(null); // 清除暫存的座標
+        setPostLocation(null); 
     };
 
     // ----------------------
-    // 4. 處理地圖點擊事件 🌟
+    // 4. 處理新留言
+    // ----------------------
+    const handleNewComment = (eventId, commentText) => {
+        if (!currentUser) {
+            alert("請先登入才能留言！");
+            return;
+        }
+
+        const newComment = {
+            id: Date.now(),
+            userId: currentUser.uid,
+            userName: userProfile?.name || currentUser.email.split('@')[0],
+            text: commentText,
+            timestamp: Date.now(),
+        };
+
+        setEvents(prevEvents => prevEvents.map(event => 
+            event.id === eventId
+                ? { ...event, comments: [...event.comments, newComment] }
+                : event
+        ));
+    };
+
+    // ----------------------
+    // 5. 處理地圖點擊事件
     // ----------------------
     const handleMapClick = (e) => {
-        // 如果表單已經彈出，不重複處理
+        if (!currentUser) {
+            alert("請先登入才能在地圖上發起揪團！");
+            return;
+        }
         if (isPosting) return;
 
-        // 檢查點擊是否來自 EventMarker 或 InfoCard
+        // 避免點擊 Marker 或 InfoCard 觸發發文
         if (e.target.closest('[data-is-marker="true"]') || e.target.closest('[data-is-infocard="true"]')) {
             return;
         }
 
         const mapRect = e.currentTarget.getBoundingClientRect();
-        // 根據地圖的實際尺寸計算相對座標 (0-1000, 0-600) 的比例
+        // 將點擊位置轉換為 1000x600 的相對座標
         const relativeX = Math.round(((e.clientX - mapRect.left) / mapRect.width) * 1000);
         const relativeY = Math.round(((e.clientY - mapRect.top) / mapRect.height) * 600);
         
         setPostLocation({ x: relativeX, y: relativeY });
         setIsPosting(true);
-        setSelectedEvent(null); // 確保資訊卡片關閉
+        setSelectedEvent(null);
     };
     
     // 僅顯示當前校區的活動
@@ -162,10 +203,14 @@ const EventMapPage = () => {
                         </button>
                     ))}
                     
-                    {/* 發起揪團按鈕 (保留，但點擊地圖也能發起) */}
+                    {/* 發起揪團按鈕 */}
                     <button
                         onClick={() => {
-                            setPostLocation({ x: 500, y: 300 }); // 預設中央座標
+                            if (!currentUser) {
+                                alert("請先登入才能發起揪團！");
+                                return;
+                            }
+                            setPostLocation({ x: 500, y: 300 }); 
                             setIsPosting(true);
                         }}
                         style={{ ...styles.campusButton, ...styles.postButton }}
@@ -177,9 +222,8 @@ const EventMapPage = () => {
                 {/* 地圖顯示區域  */}
                 <div 
                     style={styles.mapContainer} 
-                    onClick={handleMapClick} // 🌟 新增地圖點擊事件
+                    onClick={handleMapClick} 
                 >
-                    {/* 模擬地圖背景 */}
                     <img 
                         src={CAMPUS_DATA[currentCampus].mapUrl} 
                         alt={`${CAMPUS_DATA[currentCampus].name} 地圖`} 
@@ -187,18 +231,18 @@ const EventMapPage = () => {
                         onError={(e) => { e.target.onerror = null; e.target.src = '/placeholder_map.png'; }} 
                     />
 
-                    {/* 顯示所有活動標籤 (使用 FaFire 圖標增加醒目度) */}
+                    {/* 顯示所有活動標籤 */}
                     {filteredEvents.map(event => (
                         <div 
                             key={event.id}
                             onClick={(e) => {
-                                e.stopPropagation(); // 阻止事件傳播到地圖容器的 onClick
+                                e.stopPropagation(); 
                                 setSelectedEvent(event);
                             }}
-                            data-is-marker="true" // 標記為 Marker
+                            data-is-marker="true" 
                             style={{ 
                                 ...styles.eventMarker, 
-                                left: `${event.location.x / 1000 * 100}%`, // 使用百分比定位
+                                left: `${event.location.x / 1000 * 100}%`,
                                 top: `${event.location.y / 600 * 100}%`,
                             }}
                             title={event.title}
@@ -207,28 +251,16 @@ const EventMapPage = () => {
                         </div>
                     ))}
 
-                    {/* 資訊卡片 (點擊展開) */}
+                    {/* 資訊/留言卡片 (點擊展開) */}
                     {selectedEvent && (
-                        <div 
-                            data-is-infocard="true" // 標記為 InfoCard
-                            style={{
-                                ...styles.infoCard,
-                                left: `${selectedEvent.location.x / 1000 * 100 + 2}%`, // 調整定位使其位於標記右側
-                                top: `${selectedEvent.location.y / 600 * 100 - 8}%`, 
-                            }}
-                        >
-                            <button onClick={() => setSelectedEvent(null)} style={styles.closeButton}>
-                                <FaTimes />
-                            </button>
-                            <h4 style={styles.cardTitle}>{selectedEvent.title}</h4>
-                            <p style={styles.cardDescription}>{selectedEvent.description}</p>
-                            
-                            {/* 倒數計時顯示 */}
-                            <div style={styles.timer}>
-                                <FaClock style={{ marginRight: '5px' }} /> 
-                                **{formatTimeRemaining(selectedEvent.endTime)}**
-                            </div>
-                        </div>
+                        <EventInfoCard
+                            event={selectedEvent}
+                            onClose={() => setSelectedEvent(null)}
+                            formatTimeRemaining={formatTimeRemaining}
+                            onCommentSubmit={handleNewComment}
+                            currentUser={currentUser}
+                            styles={styles} // 傳遞樣式
+                        />
                     )}
                 </div>
 
@@ -239,8 +271,8 @@ const EventMapPage = () => {
                         setPostLocation(null);
                     }} 
                     onSubmit={handlePostEvent} 
-                    // 傳遞點擊的座標給表單
                     currentLocation={postLocation} 
+                    styles={styles} // 傳遞樣式
                 />}
             </div>
         </>
@@ -248,9 +280,95 @@ const EventMapPage = () => {
 };
 
 // ----------------------
-// 輔助元件：發布揪團表單 (移除時間限制)
+// 輔助元件：活動資訊與留言卡片 🌟 NEW COMPONENT
 // ----------------------
-const PostEventForm = ({ onClose, onSubmit, currentLocation }) => {
+const EventInfoCard = ({ event, onClose, formatTimeRemaining, onCommentSubmit, currentUser, styles }) => {
+    const [commentText, setCommentText] = useState('');
+    const mapWidth = 1000;
+    const mapHeight = 600;
+
+    const handleCommentSubmit = (e) => {
+        e.preventDefault();
+        if (commentText.trim() === '') return;
+        onCommentSubmit(event.id, commentText.trim());
+        setCommentText('');
+    };
+    
+    // 判斷卡片是否會超出右邊界，如果是，將卡片顯示在標記左邊
+    const isNearRightEdge = event.location.x > (mapWidth - 300); 
+    const cardLeftPosition = isNearRightEdge 
+        ? `${event.location.x / mapWidth * 100 - 2}%` // 標記左側
+        : `${event.location.x / mapWidth * 100 + 2}%`; // 標記右側
+
+    return (
+        <div 
+            data-is-infocard="true"
+            style={{
+                ...styles.infoCard,
+                left: cardLeftPosition,
+                top: `${event.location.y / mapHeight * 100 - 8}%`, 
+                width: '350px', // 加寬以容納留言區
+                maxHeight: '450px',
+                overflowY: 'auto',
+                transform: isNearRightEdge ? 'translateX(-100%)' : 'none', // 如果靠右，向左平移
+            }}
+        >
+            <button onClick={onClose} style={styles.closeButton}>
+                <FaTimes />
+            </button>
+            <h4 style={styles.cardTitle}>{event.title}</h4>
+            <p style={{ ...styles.cardDescription, color: COLOR_MORANDI_HIGHLIGHT, fontWeight: 'bold' }}>
+                發文者: **{event.creatorName}**
+            </p>
+            <p style={styles.cardDescription}>{event.description}</p>
+            
+            <div style={styles.timer}>
+                <FaClock style={{ marginRight: '5px' }} /> 
+                **{formatTimeRemaining(event.endTime)}**
+            </div>
+            
+            {/* 留言區 🌟 */}
+            <div style={commentStyles.commentSection}>
+                <h5 style={commentStyles.commentTitle}><FaComment style={{ marginRight: '5px' }} /> 留言 ({event.comments.length})</h5>
+                <div style={commentStyles.commentList}>
+                    {event.comments.length === 0 ? (
+                        <p style={commentStyles.noComment}>尚無留言，成為第一個加入的人吧！</p>
+                    ) : (
+                        event.comments.slice(-5).map(comment => ( // 只顯示最新的 5 則
+                            <div key={comment.id} style={commentStyles.commentItem}>
+                                <span style={commentStyles.commentUser}>{comment.userName}:</span> {comment.text}
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* 留言輸入框 🌟 */}
+                {currentUser ? (
+                    <form onSubmit={handleCommentSubmit} style={commentStyles.commentForm}>
+                        <textarea
+                            value={commentText}
+                            onChange={(e) => setCommentText(e.target.value.slice(0, 50))}
+                            placeholder="留下你的訊息... (限50字)"
+                            style={commentStyles.commentInput}
+                            rows="2"
+                            required
+                        />
+                        <button type="submit" style={commentStyles.commentButton}>
+                            回覆
+                        </button>
+                    </form>
+                ) : (
+                    <p style={{ ...commentStyles.noComment, color: COLOR_BRICK_RED }}>請登入後才能回覆</p>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// ----------------------
+// 輔助元件：發布揪團表單 (移除時間限制，改為使用傳入的座標)
+// ----------------------
+const PostEventForm = ({ onClose, onSubmit, currentLocation, styles }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [endTime, setEndTime] = useState(''); 
@@ -266,14 +384,12 @@ const PostEventForm = ({ onClose, onSubmit, currentLocation }) => {
             return;
         }
 
-        // 使用傳入的座標 (currentLocation)
         onSubmit(title, description, endTime, currentLocation.x, currentLocation.y);
     };
 
     // 最小時間為現在
     const now = new Date();
     const minTime = now.toISOString().slice(0, 16); 
-    // 🚨 移除 maxTime 限制
 
     return (
         <div style={styles.overlay}>
@@ -304,7 +420,6 @@ const PostEventForm = ({ onClose, onSubmit, currentLocation }) => {
                         value={endTime} 
                         onChange={(e) => setEndTime(e.target.value)}
                         min={minTime}
-                        // 🚨 移除 max 屬性
                         style={styles.input}
                         required
                     />
@@ -331,11 +446,76 @@ const PostEventForm = ({ onClose, onSubmit, currentLocation }) => {
     );
 };
 
+// ----------------------
+// 樣式定義 (新增留言區樣式)
+// ----------------------
+const commentStyles = {
+    commentSection: {
+        marginTop: '15px',
+        paddingTop: '10px',
+        borderTop: `1px solid ${COLOR_BORDER}`,
+    },
+    commentTitle: {
+        fontSize: '14px',
+        margin: '0 0 10px 0',
+        color: COLOR_MORANDI_HIGHLIGHT,
+        display: 'flex',
+        alignItems: 'center',
+    },
+    commentList: {
+        maxHeight: '120px',
+        overflowY: 'auto',
+        paddingRight: '5px',
+        marginBottom: '10px',
+        border: `1px solid ${COLOR_BORDER}`,
+        padding: '8px',
+        borderRadius: '5px',
+        backgroundColor: '#f9f9f9',
+    },
+    commentItem: {
+        fontSize: '13px',
+        marginBottom: '5px',
+        lineHeight: '1.4',
+        wordBreak: 'break-word',
+    },
+    commentUser: {
+        fontWeight: 'bold',
+        color: COLOR_PRIMARY_TEXT,
+    },
+    noComment: {
+        fontSize: '13px',
+        color: COLOR_SECONDARY_TEXT,
+        textAlign: 'center',
+        margin: '5px 0',
+    },
+    commentForm: {
+        display: 'flex',
+        gap: '5px',
+        marginTop: '10px',
+    },
+    commentInput: {
+        flexGrow: 1,
+        padding: '5px',
+        border: `1px solid ${COLOR_BORDER}`,
+        borderRadius: '5px',
+        resize: 'none',
+        fontSize: '13px',
+    },
+    commentButton: {
+        backgroundColor: COLOR_MORANDI_HIGHLIGHT,
+        color: 'white',
+        border: 'none',
+        padding: '5px 10px',
+        borderRadius: '5px',
+        cursor: 'pointer',
+        fontSize: '13px',
+        alignSelf: 'flex-start',
+    }
+};
 
-// ----------------------
-// 樣式定義 (保持不變)
-// ----------------------
+// 原始樣式定義 (保持不變)
 const styles = {
+    // ... (保持 EventMapPage.js 提供的原始 styles 內容)
     container: {
         maxWidth: '1200px',
         margin: '30px auto',
@@ -378,14 +558,14 @@ const styles = {
         backgroundColor: '#eee', 
         borderRadius: '8px',
         overflow: 'hidden',
-        cursor: 'crosshair', // 🌟 新增十字游標，提示可點擊
+        cursor: 'crosshair', 
     },
     mapImage: {
         width: '100%',
         height: '100%',
         objectFit: 'cover',
         opacity: 0.7, 
-        pointerEvents: 'none', // 確保點擊事件發生在 mapContainer 上
+        pointerEvents: 'none',
     },
     eventMarker: {
         position: 'absolute',
