@@ -7,7 +7,7 @@ import React, { useEffect, useRef, useState } from 'react';
  * Expects a backend endpoint at POST /chat which accepts { message, role }
  * and returns JSON { reply: string }
  */
-
+const BACKEND_URL = 'http://localhost:10000';
 const PERSONAS = [
   { id: 'big', label: '大笨鳥' },
   { id: 'gentle', label: '溫柔學姊' },
@@ -41,35 +41,46 @@ export default function AITalk() {
   const addMessage = (m) => setMessages(prev => [...prev, m]);
 
   const send = async () => {
-    const text = input.trim();
-    if (!text || sending) return;
+    const text = input.trim();
+    if (!text || sending) return;
 
-    addMessage({ id: Date.now(), role: 'user', text });
-    setInput('');
-    setSending(true);
+    addMessage({ id: Date.now(), role: 'user', text });
+    setInput('');
+    setSending(true);
 
-    try {
-      // POST to backend /chat (same origin). If your backend is at another host
-      // change the URL accordingly (e.g. https://your-render-url/chat)
-      const resp = await fetch('/chat', {
+    try {
+      // 💥 關鍵修改：使用完整的後端網址 (BACKEND_URL) 呼叫 /chat
+      const resp = await fetch(`${BACKEND_URL}/chat`, { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, role: persona }),
       });
 
-      if (!resp.ok) throw new Error(`Server ${resp.status}`);
-      const data = await resp.json();
+      // 💡 關鍵修改 1: 無論 resp.ok 是否為 true，都要先嘗試解析 JSON
+      const data = await resp.json();
 
-      const reply = (data && data.reply) ? data.reply : '抱歉，尚未收到回覆。';
-      addMessage({ id: Date.now() + 1, role: 'assistant', text: reply });
+      if (!resp.ok) {
+        // 💡 關鍵修改 2: 如果狀態碼不是 OK，拋出後端回傳的錯誤內容
+        // 如果後端有回傳 'reply' 欄位，就使用它
+        throw new Error(data.reply || `伺服器錯誤 (HTTP ${resp.status})`);
+      }
 
-    } catch (err) {
-      console.error('chat error', err);
-      addMessage({ id: Date.now() + 2, role: 'assistant', text: '服務暫時無法使用，請稍後再試。' });
-    } finally {
-      setSending(false);
-    }
-  };
+      // 狀態碼 OK 且解析成功，正常顯示回覆
+      const reply = (data && data.reply) ? data.reply : '抱歉，尚未收到回覆。';
+      addMessage({ id: Date.now() + 1, role: 'assistant', text: reply });
+
+    } catch (err) {
+      // 💡 關鍵修改 3: 將錯誤訊息顯示出來，而不是寫死的回覆
+      console.error('chat error', err);
+      
+      // 顯示錯誤訊息。如果是我們自己拋出的 Error，err.message 就是後端回傳的 reply 內容
+      const errorText = err.message || '服務暫時無法使用，請檢查網路。';
+      
+      addMessage({ id: Date.now() + 2, role: 'assistant', text: errorText });
+    } finally {
+      setSending(false);
+    }
+  };
 
   const onKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
