@@ -5,6 +5,11 @@ import { google } from "googleapis";
 import multer from "multer";     // 新增: 處理檔案上傳
 import axios from "axios";       // 新增: 發送 HTTP 請求
 import FormData from "form-data";// 新增: 建構 multipart/form-data
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const genAI = new GoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
 
 dotenv.config();
 
@@ -147,6 +152,51 @@ app.post("/moderation", async (req, res) => {
   } catch (error) {
     console.error("Perspective API 錯誤：", error.message);
     res.status(500).json({ error: "審查服務暫時無法使用" });
+  }
+});
+
+// ----------------------------------------
+// 3. Gemini Chat Endpoint
+// ----------------------------------------
+//const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+app.post("/chat", async (req, res) => {
+  try {
+    const { message, role } = req.body;
+
+    if (!message) return res.status(400).json({ reply: "訊息不能為空" });
+
+    let persona = "";
+    switch (role) {
+      case "gentle":
+        persona = "你是一位溫柔的學姊，說話體貼、有耐心。";
+        break;
+      case "funny":
+        persona = "你是一位搞笑學長，講話幽默風趣、有點白爛但善良。";
+        break;
+      default:
+        persona = "你是一隻笨笨但可愛的大笨鳥，語氣呆萌。";
+    }
+
+    const prompt = `
+角色設定：${persona}
+使用者訊息：${message}
+請根據角色風格回應。
+    `;
+
+    const result = await genAI.generateText({
+      model: "gemini-1.5",
+      prompt,
+      temperature: 0.7,
+      maxOutputTokens: 300,
+    });
+
+    const aiText = result.candidates?.[0]?.content || "抱歉，AI 尚未回覆";
+
+    res.json({ reply: aiText });
+  } catch (err) {
+    console.error("Gemini API 錯誤：", err);
+    res.status(500).json({ reply: "AI 服務暫時無法使用，請稍後再試。" });
   }
 });
 

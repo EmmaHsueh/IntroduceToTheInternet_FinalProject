@@ -26,7 +26,7 @@ import OtherBoardPage from './pages/OtherBoardPage';
 // 引入貼文相關組件
 import PostForm from './components/PostForm';
 import PostDetailPage from './pages/PostDetailPage';
-
+import AITalk from './components/AITalk';
 
 function App() {
   return (
@@ -76,6 +76,7 @@ function App() {
         <Route path="/media" element={<MediaPage />} />
 
       </Routes>
+      <AITalk />
     </Router>
     </AuthProvider>
   );
