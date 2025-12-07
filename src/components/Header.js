@@ -109,8 +109,8 @@ const Header = () => {
                 <nav>
                     <ul style={{ display: 'flex', listStyle: 'none', margin: 0, padding: 0, alignItems: 'center' }}>
                         {/* 基本導覽連結 */}
-                        {['首頁', '看板', '會員名錄'].map((text, index) => {
-                            const paths = ['/', '/boards', '/members'];
+                        {['首頁', '看板', '會員名錄', '即時揪團'].map((text, index) => {
+                            const paths = ['/', '/boards', '/members', '/events-map']; // ⬅️ 新增 /events-map
                             return (
                                 <li key={text} style={navItemStyle}>
                                     <Link

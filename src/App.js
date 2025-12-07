@@ -27,7 +27,7 @@ import OtherBoardPage from './pages/OtherBoardPage';
 import PostForm from './components/PostForm';
 import PostDetailPage from './pages/PostDetailPage';
 import AITalk from './components/AITalk';
-
+import EventMapPage from './pages/EventMapPage'; // ⬅️ 確保引入 EventMapPage
 function App() {
   return (
     <AuthProvider>
@@ -71,7 +71,8 @@ function App() {
         {/* 貼文詳情頁面：/boards/:boardId/:postId */}
         {/* 例如：/boards/food/123456 或 /boards/courses/7890 */}
         <Route path="/boards/:boardId/:postId" element={<PostDetailPage />} />
-        
+        {/* 🔥 關鍵修改：新增即時揪團地圖路由 🔥 */}
+        <Route path="/events-map" element={<EventMapPage />} />
         {/* 媒體資源頁面路由 */}
         <Route path="/media" element={<MediaPage />} />
 
