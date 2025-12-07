@@ -47,38 +47,43 @@ import { db } from '../firebase';
  */
 export const listenToPosts = (boardName, callback) => {
   try {
+    console.log('🔍 DEBUG: 開始設定監聽，boardName =', boardName);
+
     // 1. 建立對 posts collection 的參照
     const postsRef = collection(db, 'posts');
+    console.log('🔍 DEBUG: postsRef 已建立');
 
-    // 2. 建立查詢：只取得指定看板的貼文，並按時間排序（新的在前）
-    const q = query(
-      postsRef,
-      where('boardName', '==', boardName),  // 篩選條件：看板名稱
-      orderBy('createdAt', 'desc')          // 排序：最新的在最上面
-    );
+    // 2. 先不用任何條件，直接監聽所有貼文
+    const unsubscribe = onSnapshot(postsRef, (snapshot) => {
+      console.log('🔍 DEBUG: onSnapshot 觸發了！');
+      console.log('🔍 DEBUG: snapshot.empty =', snapshot.empty);
+      console.log('🔍 DEBUG: snapshot.size =', snapshot.size);
 
-    // 3. 開始監聽這個查詢
-    // 🔑 重點：onSnapshot 會在以下情況觸發：
-    //    - 第一次呼叫時（回傳現有資料）
-    //    - 有新貼文新增時
-    //    - 有貼文被修改時
-    //    - 有貼文被刪除時
-    const unsubscribe = onSnapshot(q, (snapshot) => {
       const posts = [];
 
-      // 4. 遍歷所有文件，將資料轉換成我們需要的格式
+      // 4. 遍歷所有文件
       snapshot.forEach((doc) => {
-        posts.push({
-          id: doc.id,           // 文件 ID
-          ...doc.data()         // 文件內的所有資料
-        });
+        console.log('🔍 DEBUG: 找到文件 ID:', doc.id);
+        console.log('🔍 DEBUG: 文件資料:', doc.data());
+
+        const data = doc.data();
+        // 手動篩選符合 boardName 的貼文
+        if (data.boardName === boardName) {
+          posts.push({
+            id: doc.id,
+            ...data
+          });
+        }
       });
 
-      // 5. 呼叫 callback，把最新資料傳出去
+      console.log('🔍 DEBUG: 篩選後的貼文數量:', posts.length);
+      console.log('🔍 DEBUG: 篩選後的貼文:', posts);
+
+      // 5. 呼叫 callback
       callback(posts);
     }, (error) => {
-      console.error('監聽貼文時發生錯誤:', error);
-      // 如果發生錯誤，回傳空陣列
+      console.error('❌ 監聽貼文時發生錯誤:', error);
+      console.error('❌ 錯誤詳情:', error.code, error.message);
       callback([]);
     });
 
@@ -86,8 +91,8 @@ export const listenToPosts = (boardName, callback) => {
     return unsubscribe;
 
   } catch (error) {
-    console.error('設定監聽時發生錯誤:', error);
-    return () => {}; // 回傳空函數避免錯誤
+    console.error('❌ 設定監聽時發生錯誤:', error);
+    return () => {};
   }
 };
 

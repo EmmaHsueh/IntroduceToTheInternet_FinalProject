@@ -313,3 +313,307 @@ Replace src/firebase.js with your Firebase config to enable Auth/Firestore/Stora
 
 ⏺ ---
   💻 步驟三：將 Firebase 整合到專案
+
+
+ IntroduceToTheInternet_FinalProject/
+  ├── 📄 配置檔案
+  │   ├── .gitignore                    # Git 忽略規則
+  │   ├── package.json                  # 前端依賴管理
+  │   ├── package-lock.json             # 依賴鎖定檔
+  │   ├── README.md                     # 專案說明文件
+  │   ├── CLAUDE.md                     # Claude 開發指引
+  │   └── FIREBASE_SETUP_GUIDE.md       # Firebase 設定指南
+  │
+  ├── 📂 public/                        # 靜態資源
+  │   ├── index.html                    # HTML 模板
+  │   ├── logo.png                      # 網站 Logo (1.8MB)
+  │   ├── site_snapshot.html            # 網站快照
+  │   └── images/                       # 圖片資源
+  │
+  ├── 📂 src/                           # 前端原始碼
+  │   ├── index.js                      # React 入口點
+  │   ├── index.css                     # 全局樣式
+  │   ├── App.js                        # 主應用程式組件
+  │   ├── firebase.js                   # Firebase 配置
+  │   │
+  │   ├── 📂 components/                # React 組件
+  │   │   ├── Auth.js                   # 認證組件
+  │   │   ├── Header.js                 # 網站導航列 ⭐
+  │   │   ├── BoardNav.js               # 看板導航
+  │   │   ├── BoardTemplate.js          # 看板模板 (共用)
+  │   │   ├── PostForm.js               # 發文表單
+  │   │   ├── Comment.js                # 單一留言組件
+  │   │   ├── Comments.js               # 留言列表
+  │   │   ├── LoginForm.js              # 登入表單 ⭐
+  │   │   ├── RegistrationForm.js       # 註冊表單 ⭐
+  │   │   ├── MemberCard.js             # 會員卡片
+  │   │   ├── MemberDirectory.js        # 會員目錄
+  │   │   ├── Gallery.js                # 圖片畫廊
+  │   │   └── MediaDisplay.js           # 媒體顯示
+  │   │
+  │   ├── 📂 pages/                     # 頁面組件
+  │   │   ├── HomePage.js               # 首頁
+  │   │   ├── LoginPage.js              # 登入頁
+  │   │   ├── BoardsIndexPage.js        # 看板索引
+  │   │   ├── PostDetailPage.js         # 貼文詳情頁
+  │   │   ├── ProfilePage.js            # 個人檔案頁
+  │   │   ├── ProfileEditPage.js        # 編輯個人檔案
+  │   │   ├── MemberPage.js             # 會員列表頁
+  │   │   ├── MediaPage.js              # 媒體頁
+  │   │   │
+  │   │   └── 📁 看板頁面 (7個)
+  │   │       ├── FoodBoardPage.js      # 美食看板
+  │   │       ├── WeatherBoardPage.js   # 天氣看板
+  │   │       ├── EventsBoardPage.js    # 活動看板
+  │   │       ├── ClubsBoardPage.js     # 社團看板
+  │   │       ├── CoursesBoardPage.js   # 課程看板
+  │   │       ├── OutfitBoardPage.js    # 穿搭看板
+  │   │       └── OtherBoardPage.js     # 其他看板
+  │   │
+  │   ├── 📂 contexts/                  # React Context
+  │   │   └── AuthContext.js            # 認證上下文 ⭐
+  │   │
+  │   └── 📂 services/                  # 服務層
+  │       └── postService.js            # Firestore 貼文服務
+  │
+  ├── 📂 backend/                       # 後端 API 服務
+  │   ├── .env                          # 環境變數 (API Keys) 🔒
+  │   ├── package.json                  # 後端依賴管理
+  │   ├── server.js                     # Express 伺服器
+  │   │   ├── POST /moderation          # 內容審核 API (Perspective API)
+  │   │   └── POST /remove-bg           # 去背 API (Remove.bg)
+  │   └── node_modules/                 # 後端依賴 (本機)
+  │
+  └── 📂 node_modules/                  # 前端依賴 (本機)
+
+  📊 統計資料
+
+  | 類別      | 數量   | 說明                                                   |
+  |---------|------|------------------------------------------------------|
+  | 前端組件    | 13 個 | src/components/                                      |
+  | 頁面      | 15 個 | src/pages/                                           |
+  | 看板      | 7 個  | Food, Weather, Events, Clubs, Courses, Outfit, Other |
+  | Context | 1 個  | AuthContext (認證管理)                                   |
+  | 服務      | 1 個  | postService (Firestore 操作)                           |
+  | 後端 API  | 2 個  | 內容審核 + 圖片去背                                          |
+
+  🔑 關鍵檔案說明
+
+  ⭐ 最近修改的檔案：
+  - src/components/Header.js - 導航列
+  - src/components/LoginForm.js - 登入功能
+  - src/components/RegistrationForm.js - 註冊功能
+  - src/contexts/AuthContext.js - 全局認證狀態管理
+
+  🌐 路由結構
+
+  / -----------------------> HomePage
+  /login -----------------> LoginPage
+  /boards ----------------> BoardsIndexPage
+  /boards/food -----------> FoodBoardPage (使用 BoardTemplate)
+  /boards/weather --------> WeatherBoardPage
+  /boards/events ---------> EventsBoardPage
+  /boards/clubs ----------> ClubsBoardPage
+  /boards/courses --------> CoursesBoardPage
+  /boards/outfit ---------> OutfitBoardPage
+  /boards/other ----------> OtherBoardPage
+  /boards/:boardId/:postId -> PostDetailPage
+  /members ---------------> MemberPage
+  /profile ---------------> ProfilePage
+  /profile/edit ----------> ProfileEditPage
+  /media -----------------> MediaPage
+
+  🔧 技術棧
+
+  - 前端: React, React Router, Firebase (Auth, Firestore, Storage)
+  - 後端: Node.js, Express, Google Perspective API, Remove.bg API
+  - 部署: Backend on Render (https://introducetotheinternet-finalproject-0yrf.onrender.com)
+
+
+
+  🚀 Express 是什麼？
+
+  Express 是 Node.js 最流行的 Web 應用框架，用來建立後端伺服器和 API。
+
+  簡單比喻：
+
+  想像您開一家餐廳：
+  - Node.js = 廚房的設備（爐子、冰箱、刀具）
+  - Express = 餐廳的營運系統（點餐流程、出餐流程、收銀系統）
+
+  Express 幫您處理：
+  - 📥 接收請求 (客人點餐)
+  - 🔄 處理邏輯 (廚師做菜)
+  - 📤 回傳結果 (上菜給客人)
+
+  ---
+  📋 在您的專案中，Express 做了什麼？
+
+  看 backend/server.js，您的 Express 伺服器提供了 2 個 API 端點：
+
+  1️⃣ POST /remove-bg - 圖片去背 API
+
+  app.post("/remove-bg", upload.single("image_file"), async (req, res) => {
+    // 接收前端上傳的圖片
+    // 轉發給 Remove.bg API 進行去背
+    // 回傳去背後的圖片給前端
+  });
+
+  流程：
+  前端上傳圖片
+      ↓
+  Express 接收
+      ↓
+  轉發給 Remove.bg API (使用後端的 API Key)
+      ↓
+  接收去背後的圖片
+      ↓
+  回傳給前端
+
+  為什麼需要後端？
+  - ✅ 保護 API Key（不暴露在前端程式碼中）
+  - ✅ 作為「代理伺服器」(Proxy) 轉發請求
+
+  2️⃣ POST /moderation - 內容審核 API
+
+  app.post("/moderation", async (req, res) => {
+    // 接收前端送來的文字內容
+    // 呼叫 Google Perspective API 檢查是否有不當內容
+    // 回傳審核結果 (是否違規)
+  });
+
+  流程：
+  前端提交文字 (貼文/留言)
+      ↓
+  Express 接收
+      ↓
+  呼叫 Google Perspective API 分析
+      ↓
+  檢查：惡意言論、侮辱、髒話、威脅等
+      ↓
+  回傳結果：{ flagged: true/false, categories: {...} }
+
+  審核項目：
+  - ❌ 惡意言論 (TOXICITY)
+  - ❌ 人身攻擊 (IDENTITY_ATTACK)
+  - ❌ 侮辱性言論 (INSULT)
+  - ❌ 髒話 (PROFANITY)
+  - ❌ 威脅恐嚇 (THREAT)
+
+  ---
+  🔧 Express 的核心概念
+
+  1. 建立伺服器
+
+  const express = require('express');
+  const app = express();  // 建立 Express 應用
+
+  app.listen(3000);  // 在 port 3000 啟動伺服器
+
+  2. 定義路由 (Route)
+
+  // GET 請求
+  app.get('/hello', (req, res) => {
+    res.send('你好！');
+  });
+
+  // POST 請求
+  app.post('/login', (req, res) => {
+    res.json({ success: true });
+  });
+
+  3. 中介軟體 (Middleware)
+
+  app.use(cors());           // 允許跨域請求
+  app.use(express.json());   // 解析 JSON 格式的請求
+
+  ---
+  🌐 您的後端架構圖
+
+  ┌─────────────────────────────────────────────┐
+  │     React 前端 (http://localhost:3000)       │
+  │  - 使用者上傳圖片                             │
+  │  - 使用者發文/留言                            │
+  └──────────────────┬──────────────────────────┘
+                     │ HTTP 請求
+                     ↓
+  ┌─────────────────────────────────────────────┐
+  │  Express 後端 (Render 部署)                  │
+  │  https://introducetotheinternet-...         │
+  │                                              │
+  │  ┌────────────────────────────────────┐    │
+  │  │  POST /remove-bg                    │    │
+  │  │  - 接收圖片                          │    │
+  │  │  - 呼叫 Remove.bg API               │    │
+  │  │  - 回傳去背圖片                       │    │
+  │  └────────────────────────────────────┘    │
+  │                                              │
+  │  ┌────────────────────────────────────┐    │
+  │  │  POST /moderation                   │    │
+  │  │  - 接收文字內容                       │    │
+  │  │  - 呼叫 Google Perspective API      │    │
+  │  │  - 回傳審核結果                       │    │
+  │  └────────────────────────────────────┘    │
+  └──────────────────┬──────────────────────────┘
+                     │
+             ┌───────┴────────┐
+             ↓                ↓
+      Remove.bg API    Google Perspective API
+
+  ---
+  📦 Express 使用的套件
+
+  從 package.json 可以看到：
+
+  | 套件         | 用途                              |
+  |------------|---------------------------------|
+  | express    | Web 框架（核心）                      |
+  | cors       | 允許前端跨域請求                        |
+  | dotenv     | 讀取 .env 環境變數                    |
+  | multer     | 處理檔案上傳                          |
+  | axios      | 發送 HTTP 請求給外部 API               |
+  | googleapis | Google API 客戶端（Perspective API） |
+  | form-data  | 建構表單資料                          |
+
+  ---
+  🎯 為什麼需要 Express 後端？
+
+  ❌ 不用後端的問題：
+
+  // 前端直接呼叫（不安全！）
+  const API_KEY = "abc123xyz"; // ⚠️ 暴露在前端程式碼中！
+  fetch('https://api.remove.bg/v1.0/removebg', {
+    headers: { 'X-Api-Key': API_KEY }  // 任何人都能看到
+  });
+
+  ✅ 使用後端的優點：
+
+  // 前端
+  fetch('https://your-backend.com/remove-bg', {
+    // 不需要 API Key
+  });
+
+  // 後端 (server.js)
+  const API_KEY = process.env.REMOVE_BG_API_KEY; // ✅ 安全存在伺服器
+
+  優點：
+  1. 🔒 保護 API Key - 不會暴露在前端
+  2. 🛡️ 安全控制 - 可以加入驗證、限流等保護
+  3. 🔄 統一管理 - 所有外部 API 呼叫集中管理
+  4. 💰 成本控制 - 避免 API Key 被盜用
+
+  ---
+  🚀 如何啟動您的 Express 後端？
+
+  cd backend
+  node server.js
+
+  啟動後會看到：
+  Server running on http://0.0.0.0:10000
+
+  現在前端就可以呼叫：
+  - POST http://localhost:10000/remove-bg
+  - POST http://localhost:10000/moderation
+
+  ---
+  總結：Express 就是一個幫您輕鬆建立後端 API 伺服器的工具，讓前端可以安全地使用各種第三方服務！ 🎉

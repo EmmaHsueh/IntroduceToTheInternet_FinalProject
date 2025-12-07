@@ -14,12 +14,14 @@ import { getAnalytics } from "firebase/analytics";
 const firebaseConfig = {
   apiKey: "AIzaSyCh4BkV1rSkk5OK-ZhUrDRq7rDnyzYIxi0",
   authDomain: "ntnu-talk.firebaseapp.com",
+  databaseURL: "https://ntnu-talk-default-rtdb.firebaseio.com",
   projectId: "ntnu-talk",
   storageBucket: "ntnu-talk.firebasestorage.app",
   messagingSenderId: "822517096739",
-  appId: "1:822517096739:web:7fad35809e42df763eec96",
-  measurementId: "G-0W1BW78L3Y"
+  appId: "1:822517096739:web:428d2d901bc21f113eec96",
+  measurementId: "G-RQ378DQYQ1"
 };
+
 
 // 初始化 Firebase
 const app = initializeApp(firebaseConfig);
