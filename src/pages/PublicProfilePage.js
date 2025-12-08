@@ -160,9 +160,22 @@ const PublicProfilePage = () => {
                             justifyContent: 'center',
                             alignItems: 'center',
                             boxShadow: '0 0 10px rgba(0,0,0,0.05)',
-                            flexShrink: 0
+                            flexShrink: 0,
+                            overflow: 'hidden'
                         }}>
-                            {AVATAR_MAPPING[user.avatar] || '👤'}
+                            {user.avatar && (user.avatar.startsWith('http://') || user.avatar.startsWith('https://')) ? (
+                                <img
+                                    src={user.avatar}
+                                    alt="用戶頭像"
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover'
+                                    }}
+                                />
+                            ) : (
+                                AVATAR_MAPPING[user.avatar] || '👤'
+                            )}
                         </div>
 
                         {/* 資訊詳情 */}

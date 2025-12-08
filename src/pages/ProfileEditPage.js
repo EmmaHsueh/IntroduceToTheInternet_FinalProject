@@ -1,9 +1,13 @@
 // src/pages/ProfileEditPage.js
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // 只需要 useNavigate
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // 導入公版 Header
-import Header from '../components/Header'; 
+import Header from '../components/Header';
+import { useAuth } from '../contexts/AuthContext';
+import { updateUserProfile } from '../services/userService';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../firebase'; 
 
 // ------------------------------------
 // 統一配色定義 (淺色活潑大學風格)
@@ -90,12 +94,37 @@ const buttonSecondaryStyle = {
 
 const ProfileEditPage = () => {
     const navigate = useNavigate();
+    const { currentUser, userProfile, loadUserProfile } = useAuth();
+
     const [formData, setFormData] = useState({
-        nickname: MOCK_CURRENT_USER.nickname,
-        bio: MOCK_CURRENT_USER.bio,
-        gender: MOCK_CURRENT_USER.gender,
-        avatar: MOCK_CURRENT_USER.avatar,
+        nickname: '',
+        bio: '',
+        gender: '男',
+        avatar: 'emoji-bear_face',
     });
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [uploadedImage, setUploadedImage] = useState(null); // 上傳的圖片檔案
+    const [imagePreview, setImagePreview] = useState(null); // 圖片預覽 URL
+    const [uploading, setUploading] = useState(false); // 上傳中狀態
+
+    // 載入用戶資料
+    useEffect(() => {
+        if (!currentUser) {
+            navigate('/login');
+            return;
+        }
+
+        if (userProfile) {
+            setFormData({
+                nickname: userProfile.nickname || '',
+                bio: userProfile.bio || '',
+                gender: userProfile.gender || '男',
+                avatar: userProfile.avatar || 'emoji-bear_face',
+            });
+            setLoading(false);
+        }
+    }, [currentUser, userProfile, navigate]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -104,19 +133,109 @@ const ProfileEditPage = () => {
 
     const handleAvatarChange = (key) => {
         setFormData(prev => ({ ...prev, avatar: key }));
+        // 如果選擇了表情符號頭像，清除上傳的照片
+        setUploadedImage(null);
+        setImagePreview(null);
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        // 實際應用：這裡會呼叫 API 更新資料
-        console.log('提交更新的資料:', formData);
-        
-        // 模擬更新成功
-        // alert('個人資料更新成功！ (功能待串接 API)'); 
-        
-        // 導回個人資料頁
-        navigate('/profile');
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // 檢查檔案類型
+            if (!file.type.startsWith('image/')) {
+                alert('請選擇圖片檔案');
+                return;
+            }
+            // 檢查檔案大小 (限制 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('圖片大小不能超過 5MB');
+                return;
+            }
+            setUploadedImage(file);
+            // 建立預覽 URL
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
     };
+
+    const uploadImageToStorage = async (file, userId) => {
+        try {
+            setUploading(true);
+            // 建立唯一的檔案名稱
+            const timestamp = Date.now();
+            const fileName = `avatars/${userId}_${timestamp}.${file.name.split('.').pop()}`;
+            const storageRef = ref(storage, fileName);
+
+            // 上傳檔案
+            await uploadBytes(storageRef, file);
+
+            // 取得下載 URL
+            const downloadURL = await getDownloadURL(storageRef);
+            setUploading(false);
+            return downloadURL;
+        } catch (error) {
+            setUploading(false);
+            console.error('❌ 上傳圖片失敗:', error);
+            throw error;
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!currentUser) {
+            alert('請先登入');
+            return;
+        }
+
+        try {
+            setSaving(true);
+            console.log('📝 準備更新個人資料:', formData);
+
+            let updatedFormData = { ...formData };
+
+            // 如果有上傳照片，先上傳到 Firebase Storage
+            if (uploadedImage) {
+                console.log('📤 正在上傳照片...');
+                const photoURL = await uploadImageToStorage(uploadedImage, currentUser.uid);
+                console.log('✅ 照片上傳成功:', photoURL);
+                // 將照片 URL 設定為頭像
+                updatedFormData.avatar = photoURL;
+            }
+
+            // 呼叫 userService 更新資料
+            await updateUserProfile(currentUser.uid, updatedFormData);
+
+            // 重新載入用戶資料
+            await loadUserProfile(currentUser.uid);
+
+            alert('✅ 個人資料更新成功！');
+            console.log('✅ 個人資料已成功更新');
+
+            // 導回個人資料頁
+            navigate('/profile');
+        } catch (error) {
+            console.error('❌ 更新個人資料失敗:', error);
+            alert(`更新失敗：${error.message}`);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div style={{ backgroundColor: COLOR_OFF_WHITE, minHeight: '100vh' }}>
+                <Header />
+                <div style={{ textAlign: 'center', padding: '50px', color: COLOR_OLIVE_GREEN }}>
+                    <div style={{ fontSize: '24px', marginBottom: '10px' }}>⏳</div>
+                    <div>載入中...</div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div style={{ backgroundColor: COLOR_OFF_WHITE, minHeight: '100vh' }}>
@@ -131,8 +250,8 @@ const ProfileEditPage = () => {
                     <form onSubmit={handleSubmit}>
                         {/* 顯示不可修改的資訊 */}
                         <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: COLOR_OFF_WHITE, borderRadius: '6px', border: `1px solid ${COLOR_LIGHT_BORDER}` }}>
-                            <p style={{ margin: '0 0 5px 0', color: COLOR_OLIVE_GREEN }}>學號/登入帳號: <strong style={{ color: COLOR_DEEP_NAVY }}>{MOCK_CURRENT_USER.user_login}</strong></p>
-                            <p style={{ margin: 0, color: COLOR_OLIVE_GREEN }}>E-mail: <strong style={{ color: COLOR_DEEP_NAVY }}>{MOCK_CURRENT_USER.user_email}</strong></p>
+                            <p style={{ margin: '0 0 5px 0', color: COLOR_OLIVE_GREEN }}>用戶 ID: <strong style={{ color: COLOR_DEEP_NAVY }}>{currentUser?.uid || '未知'}</strong></p>
+                            <p style={{ margin: 0, color: COLOR_OLIVE_GREEN }}>E-mail: <strong style={{ color: COLOR_DEEP_NAVY }}>{currentUser?.email || '未知'}</strong></p>
                         </div>
                         
                         {/* 暱稱 */}
@@ -185,26 +304,98 @@ const ProfileEditPage = () => {
 
                         {/* 頭像選擇 */}
                         <div style={{ marginBottom: '40px' }}>
-                            <span style={labelStyle}>選擇頭像 (表情符號)</span>
-                            <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginTop: '10px' }}>
-                                {AVATAR_OPTIONS.map(option => (
-                                    <div 
-                                        key={option.key}
-                                        onClick={() => handleAvatarChange(option.key)}
+                            <span style={labelStyle}>選擇頭像</span>
+
+                            {/* 表情符號選擇 */}
+                            <div style={{ marginTop: '10px', marginBottom: '20px' }}>
+                                <p style={{ fontSize: '0.9em', color: COLOR_OLIVE_GREEN, marginBottom: '10px' }}>方式一：選擇表情符號</p>
+                                <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                                    {AVATAR_OPTIONS.map(option => (
+                                        <div
+                                            key={option.key}
+                                            onClick={() => handleAvatarChange(option.key)}
+                                            style={{
+                                                fontSize: '2.5em',
+                                                padding: '10px',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                border: `3px solid ${formData.avatar === option.key && !imagePreview ? COLOR_BRICK_RED : COLOR_LIGHT_BORDER}`,
+                                                backgroundColor: formData.avatar === option.key && !imagePreview ? COLOR_OFF_WHITE : 'white',
+                                                transition: 'all 0.2s',
+                                                boxShadow: formData.avatar === option.key && !imagePreview ? `0 0 10px ${COLOR_BRICK_RED}40` : 'none',
+                                            }}
+                                        >
+                                            {option.emoji}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* 照片上傳 */}
+                            <div>
+                                <p style={{ fontSize: '0.9em', color: COLOR_OLIVE_GREEN, marginBottom: '10px' }}>方式二：上傳個人照片</p>
+                                <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageChange}
+                                        style={{ display: 'none' }}
+                                        id="avatar-upload"
+                                    />
+                                    <label
+                                        htmlFor="avatar-upload"
                                         style={{
-                                            fontSize: '2.5em',
-                                            padding: '10px',
-                                            borderRadius: '8px',
+                                            padding: '10px 20px',
+                                            backgroundColor: COLOR_MORANDI_BROWN,
+                                            color: 'white',
+                                            borderRadius: '6px',
                                             cursor: 'pointer',
-                                            border: `3px solid ${formData.avatar === option.key ? COLOR_BRICK_RED : COLOR_LIGHT_BORDER}`,
-                                            backgroundColor: formData.avatar === option.key ? COLOR_OFF_WHITE : 'white',
-                                            transition: 'all 0.2s',
-                                            boxShadow: formData.avatar === option.key ? `0 0 10px ${COLOR_BRICK_RED}40` : 'none',
+                                            fontSize: '0.95em',
+                                            fontWeight: '600',
+                                            transition: 'background-color 0.2s',
                                         }}
                                     >
-                                        {option.emoji}
-                                    </div>
-                                ))}
+                                        📸 選擇照片
+                                    </label>
+
+                                    {imagePreview && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                            <img
+                                                src={imagePreview}
+                                                alt="預覽"
+                                                style={{
+                                                    width: '80px',
+                                                    height: '80px',
+                                                    borderRadius: '50%',
+                                                    objectFit: 'cover',
+                                                    border: `3px solid ${COLOR_BRICK_RED}`,
+                                                    boxShadow: `0 0 10px ${COLOR_BRICK_RED}40`
+                                                }}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setUploadedImage(null);
+                                                    setImagePreview(null);
+                                                }}
+                                                style={{
+                                                    padding: '5px 10px',
+                                                    backgroundColor: 'transparent',
+                                                    color: COLOR_BRICK_RED,
+                                                    border: `1px solid ${COLOR_BRICK_RED}`,
+                                                    borderRadius: '4px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.85em'
+                                                }}
+                                            >
+                                                移除照片
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                                <p style={{ fontSize: '0.8em', color: COLOR_OLIVE_GREEN, marginTop: '8px' }}>
+                                    * 建議使用正方形照片,檔案大小不超過 5MB
+                                </p>
                             </div>
                         </div>
 
@@ -219,19 +410,28 @@ const ProfileEditPage = () => {
                             >
                                 取消/返回
                             </button>
-                            <button 
-                                type="submit" 
-                                style={buttonPrimaryStyle}
+                            <button
+                                type="submit"
+                                disabled={saving}
+                                style={{
+                                    ...buttonPrimaryStyle,
+                                    opacity: saving ? 0.6 : 1,
+                                    cursor: saving ? 'not-allowed' : 'pointer'
+                                }}
                                 onMouseOver={e => {
-                                    e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN;
-                                    e.currentTarget.style.transform = 'translateY(-1px)';
+                                    if (!saving) {
+                                        e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN;
+                                        e.currentTarget.style.transform = 'translateY(-1px)';
+                                    }
                                 }}
                                 onMouseOut={e => {
-                                    e.currentTarget.style.backgroundColor = COLOR_BRICK_RED;
-                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    if (!saving) {
+                                        e.currentTarget.style.backgroundColor = COLOR_BRICK_RED;
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                    }
                                 }}
                             >
-                                儲存修改
+                                {saving ? '儲存中...' : '儲存修改'}
                             </button>
                         </div>
                     </form>

@@ -344,9 +344,22 @@ const ProfilePage = () => {
                             justifyContent: 'center',
                             alignItems: 'center',
                             boxShadow: '0 0 10px rgba(0,0,0,0.05)',
-                            flexShrink: 0
+                            flexShrink: 0,
+                            overflow: 'hidden'
                         }}>
-                            {AVATAR_MAPPING[userProfile.avatar] || '👤'}
+                            {userProfile.avatar && (userProfile.avatar.startsWith('http://') || userProfile.avatar.startsWith('https://')) ? (
+                                <img
+                                    src={userProfile.avatar}
+                                    alt="用戶頭像"
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover'
+                                    }}
+                                />
+                            ) : (
+                                AVATAR_MAPPING[userProfile.avatar] || '👤'
+                            )}
                         </div>
 
                         {/* 1.2 資訊詳情 */}

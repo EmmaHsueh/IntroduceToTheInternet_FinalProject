@@ -132,18 +132,30 @@ export const AuthProvider = ({ children }) => {
       if (userDoc.exists()) {
         setUserProfile(userDoc.data());
       } else {
-        // 如果找不到用戶資料，使用 Firebase Auth 的基本資訊作為備用
-        console.warn('Firestore 中找不到用戶資料，使用 Auth 資訊');
-        setUserProfile({
+        // 🔥 如果找不到用戶資料，自動建立一個
+        console.warn('⚠️ Firestore 中找不到用戶資料，正在自動建立...');
+
+        const newUserProfile = {
           uid: uid,
           email: auth.currentUser?.email || '',
-          nickname: auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || '用戶',
+          user_login: auth.currentUser?.email?.split('@')[0] || 'user',
+          nickname: auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || '新用戶',
+          first_name: '',
+          last_name: '',
+          gender: '保密',
           avatar: 'emoji-student',
-          bio: '這個人很懶，什麼都沒留下。'
-        });
+          bio: '這個人很懶，什麼都沒留下。',
+          createdAt: new Date().toISOString(),
+        };
+
+        // 建立 Firestore 文檔
+        await setDoc(doc(db, 'users', uid), newUserProfile);
+        console.log('✅ 已自動建立用戶 Firestore 文檔');
+
+        setUserProfile(newUserProfile);
       }
     } catch (error) {
-      console.error('載入用戶資料錯誤:', error);
+      console.error('❌ 載入用戶資料錯誤:', error);
       // 發生錯誤時也提供基本資訊
       setUserProfile({
         uid: uid,
