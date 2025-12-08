@@ -1,38 +1,70 @@
 // src/components/MemberDirectory.js
 import React, { useState, useEffect } from 'react';
 import MemberCard from './MemberCard';
-
-// 模擬會員資料 (在實際專案中，這裡需要從 API 獲取)
-const mockMembers = [
-    { id: 1, display_name: '匿名使用者A', avatar: '/avatar1.png', gender: '男性' },
-    { id: 2, display_name: '課程達人', avatar: '/avatar2.png', gender: '女性' },
-    { id: 3, display_name: '師聲管理員', avatar: '/avatar3.png', gender: '保密' },
-    { id: 4, display_name: '活動愛好者', avatar: '/avatar4.png', gender: '女性' },
-    // 根據 XML 設置，Profiles Per Page: 12
-    { id: 5, display_name: '學生五號', avatar: '/avatar5.png', gender: '男性' },
-    { id: 6, display_name: '社團瘋', avatar: '/avatar6.png', gender: '男性' },
-    { id: 7, display_name: '穿搭小編', avatar: '/avatar7.png', gender: '女性' },
-    { id: 8, display_name: '美食獵人', avatar: '/avatar8.png', gender: '保密' },
-    { id: 9, display_name: '校園記者', avatar: '/avatar9.png', gender: '女性' },
-    { id: 10, display_name: '代購王', avatar: '/avatar10.png', gender: '男性' },
-    { id: 11, display_name: '愛貓人士', avatar: '/avatar11.png', gender: '女性' },
-    { id: 12, display_name: '天氣觀察家', avatar: '/avatar12.png', gender: '男性' },
-];
+import { getAllUsers, searchUsers } from '../services/userService';
 
 const MemberDirectory = () => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [filteredMembers, setFilteredMembers] = useState(mockMembers);
+    const [allMembers, setAllMembers] = useState([]);
+    const [filteredMembers, setFilteredMembers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // 載入所有會員資料
+    useEffect(() => {
+        const loadMembers = async () => {
+            try {
+                setLoading(true);
+                console.log('📥 開始載入會員名錄...');
+                const users = await getAllUsers();
+                setAllMembers(users);
+                setFilteredMembers(users);
+                setLoading(false);
+                console.log(`✅ 成功載入 ${users.length} 位會員`);
+            } catch (err) {
+                console.error('❌ 載入會員失敗:', err);
+                setError('載入會員資料失敗，請稍後再試');
+                setLoading(false);
+            }
+        };
+
+        loadMembers();
+    }, []);
 
     // 搜尋邏輯
     useEffect(() => {
-        const results = mockMembers.filter(member =>
-            member.display_name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        setFilteredMembers(results);
-    }, [searchTerm]);
+        if (!searchTerm.trim()) {
+            // 沒有搜尋詞時顯示所有會員
+            setFilteredMembers(allMembers);
+        } else {
+            // 在本地端過濾（已經載入所有資料）
+            const lowerKeyword = searchTerm.toLowerCase();
+            const results = allMembers.filter(member => {
+                const nickname = (member.nickname || '').toLowerCase();
+                const email = (member.email || '').toLowerCase();
+                const firstName = (member.first_name || '').toLowerCase();
+                const lastName = (member.last_name || '').toLowerCase();
+
+                return nickname.includes(lowerKeyword) ||
+                       email.includes(lowerKeyword) ||
+                       firstName.includes(lowerKeyword) ||
+                       lastName.includes(lowerKeyword);
+            });
+            setFilteredMembers(results);
+        }
+    }, [searchTerm, allMembers]);
 
     // 樣式
     const searchInputStyle = { padding: '10px', fontSize: '16px', border: '1px solid #ccc', borderRadius: '4px', width: '100%' };
+
+    // 如果發生錯誤
+    if (error) {
+        return (
+            <div style={{ padding: '20px', textAlign: 'center' }}>
+                <h2 style={{ color: '#c9362a' }}>❌ {error}</h2>
+            </div>
+        );
+    }
 
     return (
         <div style={{ padding: '20px' }}>
@@ -40,40 +72,63 @@ const MemberDirectory = () => {
                 師大會員名錄
             </h2>
 
-            {/* 搜尋欄位 (UM 預設開啟) */}
+            {/* 搜尋欄位 */}
             <div style={{ maxWidth: '600px', margin: '0 auto 30px auto' }}>
                 <input
                     type="text"
-                    placeholder="搜尋會員 (輸入暱稱或姓名)..."
+                    placeholder="搜尋會員 (輸入暱稱、姓名或 Email)..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     style={searchInputStyle}
+                    disabled={loading}
                 />
             </div>
-            
-            {/* 會員列表 (網格佈局) */}
-            <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-                gap: '20px', 
-                justifyItems: 'center' 
-            }}>
-                {filteredMembers.map(member => (
-                    <MemberCard key={member.id} member={member} />
-                ))}
-            </div>
 
-            {/* 分頁 (UM 預設: 12 個 / 頁) */}
-            {filteredMembers.length > 12 && (
-                <div style={{ textAlign: 'center', marginTop: '40px' }}>
-                    {/* 這裡需要實作分頁邏輯 */}
-                    <button style={{ padding: '10px 20px', margin: '0 10px' }}>上一頁</button>
-                    <button style={{ padding: '10px 20px', margin: '0 10px' }}>下一頁</button>
+            {/* 載入狀態 */}
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '50px', color: '#666' }}>
+                    <div style={{ fontSize: '24px', marginBottom: '10px' }}>⏳</div>
+                    <div>載入會員資料中...</div>
                 </div>
-            )}
-            
-            {filteredMembers.length === 0 && (
-                <p style={{ textAlign: 'center', color: 'gray' }}>查無符合條件的會員。</p>
+            ) : (
+                <>
+                    {/* 會員列表 (網格佈局) */}
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: '20px',
+                        justifyItems: 'center'
+                    }}>
+                        {filteredMembers.map(member => (
+                            <MemberCard
+                                key={member.id}
+                                member={{
+                                    id: member.id,
+                                    display_name: member.nickname || member.email?.split('@')[0] || '匿名用戶',
+                                    avatar: member.avatar,
+                                    gender: member.gender || '保密',
+                                    email: member.email
+                                }}
+                            />
+                        ))}
+                    </div>
+
+                    {/* 空狀態 */}
+                    {filteredMembers.length === 0 && (
+                        <div style={{ textAlign: 'center', padding: '50px', color: '#666' }}>
+                            <div style={{ fontSize: '48px', marginBottom: '15px' }}>👥</div>
+                            <p>查無符合條件的會員</p>
+                        </div>
+                    )}
+
+                    {/* 顯示會員總數 */}
+                    {filteredMembers.length > 0 && (
+                        <div style={{ textAlign: 'center', marginTop: '30px', color: '#666', fontSize: '14px' }}>
+                            共找到 {filteredMembers.length} 位會員
+                            {searchTerm && ` (從 ${allMembers.length} 位會員中篩選)`}
+                        </div>
+                    )}
+                </>
             )}
         </div>
     );

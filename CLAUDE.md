@@ -66,6 +66,7 @@ The application uses React Router with the following route hierarchy:
 
 **Key Components**:
 - `BoardTemplate`: Main board UI with post list, post form, and chat widget
+- `ChatWidget`: Real-time chat widget with Firebase integration for persistent messaging
 - `PostForm`: Multi-image upload form with background removal (remove.bg API via backend proxy) and content moderation (Perspective API)
 - `PostDetailPage`: Renders full post with all images and comment thread
 - `Header`: Site navigation
@@ -75,6 +76,7 @@ The application uses React Router with the following route hierarchy:
 
 **Key Services**:
 - `postService.js`: Firestore operations for posts and comments (`listenToPosts`, `createPost`, `addCommentToPost`, `getPostById`)
+- `chatService.js`: Firestore operations for real-time chat (`listenToChatMessages`, `sendChatMessage`, `cleanupExpiredMessages`, `clearBoardChatMessages`)
 
 ### Data Flow
 
@@ -108,6 +110,21 @@ The application uses React Router with the following route hierarchy:
 3. Firestore document is updated with new comment and incremented `commentCount`
 4. `onSnapshot` listener triggers re-render with updated data
 
+**Real-time Chat Flow** (NEW):
+1. User clicks "💬 即時聊天室" button on any board page
+2. `ChatWidget` component mounts and sets up `onSnapshot` listener via `listenToChatMessages()`
+3. Chat messages are fetched from Firestore `chatMessages` collection filtered by `boardName`
+4. User types message and clicks "發送"
+5. Message is sent to Firestore via `sendChatMessage()` with:
+   - `boardName`: Current board name (each board has independent chat)
+   - `sender`: User's nickname or email
+   - `senderId`: User's Firebase UID
+   - `content`: Message text
+   - `createdAt`: Current timestamp
+   - `expiresAt`: Current timestamp + 30 days
+6. `onSnapshot` listener automatically updates all connected users' chat widgets in real-time
+7. Messages older than 30 days are automatically cleaned up when the app starts via `cleanupExpiredMessages()`
+
 ### Styling
 The application uses inline styles with a consistent color palette:
 - `COLOR_DEEP_NAVY` (#1e2a38) - Primary text
@@ -130,6 +147,7 @@ The application uses inline styles with a consistent color palette:
 - **Firestore Collections**:
   - `users` - User profiles with fields: `uid`, `email`, `nickname`, `avatar`, `bio`, `user_login`, `first_name`, `last_name`, `gender`, `createdAt`
   - `posts` - Posts with fields: `title`, `content`, `boardName`, `authorId`, `authorName`, `imageUrls` (array), `createdAt` (Timestamp), `commentCount`, `comments` (array)
+  - `chatMessages` - Real-time chat messages with fields: `boardName`, `sender`, `senderId`, `content`, `createdAt` (Timestamp), `expiresAt` (Timestamp, 30 days from creation)
 - **Firebase Auth** - Email/Password and Google OAuth authentication
 - **Firebase Storage** - Configured but not actively used (images currently stored as Base64 in `imageUrls`)
 
@@ -151,13 +169,20 @@ Each board's posts are isolated by the `boardName` field in Firestore. The `list
 The application uses Firestore's `onSnapshot` for real-time updates:
 - When any user creates a post, all connected clients see it immediately
 - When any user adds a comment, the post updates for all viewers
-- `BoardTemplate` sets up listener on mount and cleans up on unmount via `useEffect` return function
+- When any user sends a chat message, all users in the same board's chat room see it instantly
+- `BoardTemplate` and `ChatWidget` set up listeners on mount and clean up on unmount via `useEffect` return function
 
 ### Image Storage Strategy
 Images are currently stored as Base64 strings in the `imageUrls` array field within Firestore documents. This has size limitations and is not optimal for production. For better performance, consider migrating to Firebase Storage and storing download URLs instead.
 
-### Chat Widget
-Each board has an independent chat widget (`ChatWidget` component) with **local state only** - messages are not persisted to Firestore and reset on page refresh. This is intentional for the current implementation.
+### Chat Widget (Real-time & Persistent)
+Each board has an independent chat widget (`ChatWidget` component) with **Firebase Firestore integration**:
+- Messages are stored in the `chatMessages` collection and persist across sessions
+- Each board's chat is isolated by `boardName` field
+- Messages are kept for 30 days, then automatically deleted via `expiresAt` timestamp
+- Real-time synchronization: all users see new messages instantly via `onSnapshot` listener
+- Automatic cleanup on app startup removes expired messages via `cleanupExpiredMessages()`
+- Users must be logged in to send messages (checked via `currentUser`)
 
 ### Comment System
 Comments are stored as an array (`comments`) within each post document in Firestore. When adding a comment via `addCommentToPost()`:
@@ -181,14 +206,20 @@ Comments are stored as an array (`comments`) within each post document in Firest
 
 **Adjusting moderation sensitivity**: Modify `THRESHOLD` constant in `backend/server.js` (line 26). Range is 0.0-1.0, where higher values = less strict.
 
+**Managing chat messages**:
+- To clear all messages in a specific board: Use `clearBoardChatMessages(boardName)` from `chatService.js`
+- To manually trigger expired message cleanup: Use `cleanupExpiredMessages()` from `chatService.js`
+- Messages are automatically cleaned up on app startup in `App.js` via `useEffect`
+
 **Backend deployment**: The backend is configured for Render deployment with `HOST = '0.0.0.0'` and `PORT` from environment variables (defaults to 10000).
 
 ## Current Limitations
 
 - Images stored as Base64 in Firestore (size limitations, not optimal for performance)
-- Chat messages not persisted (reset on page refresh)
-- No user permission system for edit/delete operations on posts/comments
+- No user permission system for edit/delete operations on posts/comments/chat messages
 - Member directory may use mock data (not fully integrated with Firebase users collection)
 - No pagination for posts (all posts loaded at once via `onSnapshot`)
+- No pagination for chat messages (all messages for a board loaded at once)
 - No search/filter functionality for posts
 - Content moderation only checks text, not images
+- Chat messages don't have edit/delete functionality for individual users

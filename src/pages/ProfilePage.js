@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/Header';
-import { useAuth } from '../contexts/AuthContext'; 
+import { useAuth } from '../contexts/AuthContext';
+import { getUserPosts, getUserComments, deletePost, deleteComment } from '../services/userService'; 
 
 // ------------------------------------
 // 統一配色定義 (淺色活潑大學風格)
@@ -55,8 +56,9 @@ const ProfilePage = () => {
     const { currentUser: authUser, userProfile } = useAuth();
 
     const [activeTab, setActiveTab] = useState('posts');
-    const userPosts = MOCK_USER_POSTS; // TODO: 之後從 Firestore 查詢
-    const userComments = MOCK_USER_COMMENTS; // TODO: 之後從 Firestore 查詢
+    const [userPosts, setUserPosts] = useState([]);
+    const [userComments, setUserComments] = useState([]);
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -66,6 +68,37 @@ const ProfilePage = () => {
             navigate('/login');
         }
     }, [authUser, navigate]);
+
+    // 🔥 載入用戶的貼文和留言
+    useEffect(() => {
+        const loadUserData = async () => {
+            if (!authUser || !userProfile) return;
+
+            try {
+                setLoading(true);
+                console.log('📥 載入用戶貼文和留言...');
+
+                const userName = userProfile.nickname || authUser.email?.split('@')[0] || '匿名用戶';
+
+                // 並行載入貼文和留言
+                const [posts, comments] = await Promise.all([
+                    getUserPosts(authUser.uid),
+                    getUserComments(authUser.uid, userName)
+                ]);
+
+                setUserPosts(posts);
+                setUserComments(comments);
+                setLoading(false);
+
+                console.log(`✅ 成功載入 ${posts.length} 篇貼文和 ${comments.length} 則留言`);
+            } catch (error) {
+                console.error('❌ 載入用戶資料失敗:', error);
+                setLoading(false);
+            }
+        };
+
+        loadUserData();
+    }, [authUser, userProfile]);
 
     // 如果還在載入或未登入，顯示載入中
     if (!authUser || !userProfile) {
@@ -124,76 +157,164 @@ const ProfilePage = () => {
         });
     };
 
+    // 🔥 刪除貼文
+    const handleDeletePost = async (postId) => {
+        if (!window.confirm('確定要刪除這篇貼文嗎？此操作無法復原。')) {
+            return;
+        }
+
+        try {
+            console.log('🗑️ 刪除貼文:', postId);
+            await deletePost(postId, authUser.uid);
+
+            // 從列表中移除
+            setUserPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
+
+            alert('✅ 貼文已成功刪除');
+        } catch (error) {
+            console.error('❌ 刪除貼文失敗:', error);
+            alert(`刪除失敗：${error.message}`);
+        }
+    };
+
+    // 🔥 刪除留言
+    const handleDeleteComment = async (postId, commentId) => {
+        if (!window.confirm('確定要刪除這則留言嗎？此操作無法復原。')) {
+            return;
+        }
+
+        try {
+            console.log('🗑️ 刪除留言:', commentId);
+            const userName = userProfile.nickname || authUser.email?.split('@')[0] || '匿名用戶';
+            await deleteComment(postId, commentId, authUser.uid, userName);
+
+            // 從列表中移除
+            setUserComments(prevComments => prevComments.filter(c => c.id !== commentId));
+
+            alert('✅ 留言已成功刪除');
+        } catch (error) {
+            console.error('❌ 刪除留言失敗:', error);
+            alert(`刪除失敗：${error.message}`);
+        }
+    };
+
     // ------------------------------------
     // 渲染函數
     // ------------------------------------
     const renderPosts = () => (
         <div style={{ display: 'grid', gap: '15px' }}>
-            {userPosts.map(post => (
-                <div key={post.id} style={{
-                    padding: '15px',
-                    border: `1px solid ${COLOR_LIGHT_BORDER}`,
-                    borderRadius: '8px',
-                    backgroundColor: 'white',
-                    transition: 'box-shadow 0.3s',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                }}
-                onMouseOver={e => e.currentTarget.style.boxShadow = '0 3px 8px rgba(0,0,0,0.1)'}
-                onMouseOut={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)'}
-                >
-                    <Link to={`/boards/someboard/${post.id}`} style={{ 
-                        fontSize: '1.2em', 
-                        fontWeight: '600', 
-                        color: COLOR_DEEP_NAVY, 
-                        textDecoration: 'none',
-                        transition: 'color 0.3s'
-                    }}
-                    onMouseOver={e => e.currentTarget.style.color = COLOR_BRICK_RED}
-                    onMouseOut={e => e.currentTarget.style.color = COLOR_DEEP_NAVY}
-                    >
-                        {post.title}
-                    </Link>
-                    <div style={{ fontSize: '0.9em', color: COLOR_OLIVE_GREEN, marginTop: '5px' }}>
-                        看板: {post.board} | 瀏覽: {post.views} | 留言: {post.comments} | 發表於: {post.date}
-                    </div>
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '30px', color: COLOR_OLIVE_GREEN }}>
+                    載入中...
                 </div>
-            ))}
-            {userPosts.length === 0 && <p style={{ textAlign: 'center', color: COLOR_OLIVE_GREEN }}>尚無貼文。</p>}
+            ) : (
+                <>
+                    {userPosts.map(post => (
+                        <div key={post.id} style={{
+                            padding: '15px',
+                            border: `1px solid ${COLOR_LIGHT_BORDER}`,
+                            borderRadius: '8px',
+                            backgroundColor: 'white',
+                            transition: 'box-shadow 0.3s',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                        }}
+                        onMouseOver={e => e.currentTarget.style.boxShadow = '0 3px 8px rgba(0,0,0,0.1)'}
+                        onMouseOut={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)'}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div style={{ flex: 1 }}>
+                                    <Link to={`/boards/${post.boardName?.toLowerCase()}/${post.id}`} style={{
+                                        fontSize: '1.2em',
+                                        fontWeight: '600',
+                                        color: COLOR_DEEP_NAVY,
+                                        textDecoration: 'none',
+                                        transition: 'color 0.3s'
+                                    }}
+                                    onMouseOver={e => e.currentTarget.style.color = COLOR_BRICK_RED}
+                                    onMouseOut={e => e.currentTarget.style.color = COLOR_DEEP_NAVY}
+                                    >
+                                        {post.title}
+                                    </Link>
+                                    <div style={{ fontSize: '0.9em', color: COLOR_OLIVE_GREEN, marginTop: '5px' }}>
+                                        看板: {post.boardName} | 留言: {post.commentCount} | 發表於: {new Date(post.createdAt).toLocaleDateString('zh-TW')}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => handleDeletePost(post.id)}
+                                    style={{
+                                        padding: '6px 12px',
+                                        backgroundColor: COLOR_BRICK_RED,
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                        cursor: 'pointer',
+                                        fontSize: '0.85em',
+                                        marginLeft: '10px'
+                                    }}
+                                    onMouseOver={e => e.currentTarget.style.backgroundColor = '#a02820'}
+                                    onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_BRICK_RED}
+                                >
+                                    🗑️ 刪除
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                    {userPosts.length === 0 && <p style={{ textAlign: 'center', color: COLOR_OLIVE_GREEN }}>尚無貼文。</p>}
+                </>
+            )}
         </div>
     );
 
     const renderComments = () => (
         <div style={{ display: 'grid', gap: '15px' }}>
-            {userComments.map(comment => (
-                <div key={comment.id} style={{
-                    padding: '15px',
-                    border: `1px solid ${COLOR_LIGHT_BORDER}`,
-                    borderRadius: '8px',
-                    backgroundColor: 'white',
-                    transition: 'box-shadow 0.3s',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                }}
-                onMouseOver={e => e.currentTarget.style.boxShadow = '0 3px 8px rgba(0,0,0,0.1)'}
-                onMouseOut={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)'}
-                >
-                    <p style={{ margin: '0 0 10px 0', color: COLOR_DEEP_NAVY }}>**留言內容:** {comment.content}</p>
-                    <Link to={`/boards/someboard/${comment.postId}`} style={{ 
-                        fontSize: '0.9em', 
-                        color: COLOR_LINK, 
-                        textDecoration: 'none',
-                        transition: 'color 0.3s'
-                    }}
-                    onMouseOver={e => e.currentTarget.style.color = COLOR_BRICK_RED}
-                    onMouseOut={e => e.currentTarget.style.color = COLOR_LINK}
-                    >
-                        **原貼文:** {comment.postTitle}
-                    </Link>
-                    <div style={{ fontSize: '0.8em', color: COLOR_OLIVE_GREEN, marginTop: '5px', textAlign: 'right' }}>
-                        留言於: {comment.date}
-                    </div>
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '30px', color: COLOR_OLIVE_GREEN }}>
+                    載入中...
                 </div>
-            ))}
-            {userComments.length === 0 && <p style={{ textAlign: 'center', color: COLOR_OLIVE_GREEN }}>尚無留言。</p>}
+            ) : (
+                <>
+                    {userComments.map(comment => (
+                        <div key={comment.id} style={{
+                            padding: '15px',
+                            border: `1px solid ${COLOR_LIGHT_BORDER}`,
+                            borderRadius: '8px',
+                            backgroundColor: 'white',
+                            transition: 'box-shadow 0.3s',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                        }}
+                        onMouseOver={e => e.currentTarget.style.boxShadow = '0 3px 8px rgba(0,0,0,0.1)'}
+                        onMouseOut={e => e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)'}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div style={{ flex: 1 }}>
+                                    <p style={{ margin: '0 0 10px 0', color: COLOR_DEEP_NAVY }}><strong>留言內容:</strong> {comment.content}</p>
+                                    <div style={{ fontSize: '0.9em', color: COLOR_OLIVE_GREEN }}>
+                                        原貼文: {comment.postTitle} | 看板: {comment.boardName} | {comment.date}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => handleDeleteComment(comment.postId, comment.id)}
+                                    style={{
+                                        padding: '6px 12px',
+                                        backgroundColor: COLOR_BRICK_RED,
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                        cursor: 'pointer',
+                                        fontSize: '0.85em',
+                                        marginLeft: '10px'
+                                    }}
+                                    onMouseOver={e => e.currentTarget.style.backgroundColor = '#a02820'}
+                                    onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_BRICK_RED}
+                                >
+                                    🗑️ 刪除
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                    {userComments.length === 0 && <p style={{ textAlign: 'center', color: COLOR_OLIVE_GREEN }}>尚無留言。</p>}
+                </>
+            )}
         </div>
     );
 

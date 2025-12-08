@@ -4,6 +4,7 @@ import Header from './Header'; // 假設 Header 存在
 import BoardNav from './BoardNav'; // 假設 BoardNav 存在
 import PostDetailPage from "../pages/PostDetailPage";
 import PostForm from './PostForm';
+import ChatWidget from './ChatWidget'; // 🔥 新增：引入獨立的 ChatWidget 元件
 
 // 🔥 新增：引入 Firestore 操作函數
 import { listenToPosts, createPost, addCommentToPost } from '../services/postService';
@@ -66,114 +67,10 @@ const Comment = ({ comment }) => (
 
 
 // ------------------------------------
-// 輔助組件 (ChatWidget) (保持不變)
+// 輔助組件 (ChatWidget) - 🔥 已移至獨立檔案 ChatWidget.js
 // ------------------------------------
-const ChatWidget = ({ onClose, boardName, messages, onSendMessage }) => {
-    const [input, setInput] = useState(''); 
-    const handleSend = () => { 
-        if (input.trim()) {
-            onSendMessage(input);
-            setInput('');
-        }
-    };
-    
-    const CHAT_BUTTON_STYLE = {
-        padding: '8px 15px', 
-        backgroundColor: COLOR_MORANDI_BROWN, 
-        color: 'white', 
-        border: 'none', 
-        borderRadius: '6px', 
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        transition: 'background-color 0.3s',
-    };
-
-    return (
-        <div style={{ 
-            position: 'fixed', 
-            bottom: '20px', 
-            right: '20px', 
-            width: '300px', 
-            height: '400px', 
-            borderRadius: '12px', 
-            overflow: 'hidden', 
-            boxShadow: '0 6px 20px rgba(0, 0, 0, 0.2)', 
-            zIndex: 1000, 
-            display: 'flex', 
-            flexDirection: 'column',
-            backgroundColor: COLOR_BACKGROUND_LIGHT
-        }}>
-            {/* 標題欄 */}
-            <div style={{ 
-                padding: '12px 15px', 
-                backgroundColor: COLOR_MORANDI_BROWN, 
-                color: 'white', 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                borderTopLeftRadius: '12px',
-                borderTopRightRadius: '12px',
-            }}>
-                <div style={{ fontWeight: 'bold' }}>💬 {boardName} 即時聊天室</div>
-                <button 
-                    onClick={onClose} 
-                    style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.4em', cursor: 'pointer', marginLeft: '10px', opacity: 0.9 }}
-                >&times;</button>
-            </div>
-            {/* 訊息區 */}
-            <div style={{ 
-                flexGrow: 1, 
-                padding: '10px 15px', 
-                overflowY: 'auto', 
-                backgroundColor: COLOR_OFF_WHITE, 
-                display: 'flex', 
-                flexDirection: 'column-reverse' 
-            }}>
-                {messages.slice().reverse().map((msg, index) => (
-                    <div key={index} style={{ margin: '5px 0', fontSize: 'small', textAlign: msg.sender === 'User' ? 'right' : 'left' }}>
-                        <span style={{ 
-                            padding: '8px 12px', 
-                            borderRadius: '18px', 
-                            backgroundColor: msg.sender === 'User' ? COLOR_MORANDI_BROWN : COLOR_BORDER, 
-                            color: msg.sender === 'User' ? 'white' : COLOR_DEEP_NAVY, 
-                            display: 'inline-block', 
-                            maxWidth: '80%',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                        }}>
-                            {msg.content}
-                        </span>
-                    </div>
-                ))}
-            </div>
-            {/* 輸入區 */}
-            <div style={{ 
-                padding: '12px 15px', 
-                borderTop: `1px solid ${COLOR_BORDER}`, 
-                display: 'flex',
-                borderBottomLeftRadius: '12px',
-                borderBottomRightRadius: '12px',
-                backgroundColor: COLOR_BACKGROUND_LIGHT
-            }}>
-                <input 
-                    type="text" 
-                    placeholder="輸入訊息..." 
-                    value={input} 
-                    onChange={(e) => setInput(e.target.value)} 
-                    onKeyPress={(e) => { if (e.key === 'Enter') handleSend(); }}
-                    style={{ flexGrow: 1, padding: '10px', border: `1px solid ${COLOR_BORDER}`, borderRadius: '6px', marginRight: '10px', outline: 'none' }} 
-                />
-                <button 
-                    onClick={handleSend} 
-                    style={CHAT_BUTTON_STYLE}
-                    onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_OLIVE_GREEN} 
-                    onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN}
-                >
-                    發送
-                </button>
-            </div>
-        </div>
-    );
-};
+// ChatWidget 現在是從 './ChatWidget' 引入的獨立元件
+// 不再需要在這裡定義
 
 
 // ------------------------------------
@@ -250,16 +147,8 @@ const BoardTemplate = ({ boardName }) => {
         };
     }, [boardName]); // 當 boardName 改變時重新監聽
 
-    // 聊天室邏輯 (略)
-    const [chatMessages, setChatMessages] = useState([
-        { content: `歡迎來到【${boardName}】即時聊天室！`, sender: 'System', time: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }) },
-    ]);
-    const handleSendMessage = useCallback((content) => { 
-        setChatMessages(prevMessages => [
-            ...prevMessages, 
-            { content: content, sender: 'User', time: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }) }
-        ]);
-    }, []);
+    // 🔥 移除舊的聊天室邏輯 - 現在由 ChatWidget 元件自行處理
+    // 不再需要在這裡管理 chatMessages state
 
     // 🔥 修改：新增貼文到 Firestore（取代 localStorage）
     const handleNewPostSubmit = async (title, content, imageUrls) => {
@@ -415,7 +304,7 @@ const BoardTemplate = ({ boardName }) => {
                                     onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_OLIVE_GREEN}
                                     onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN}
                                 >
-                                    💬 即時聊天室 ({chatMessages.length})
+                                    💬 即時聊天室
                                 </button>
                             </div>
 
@@ -461,12 +350,11 @@ const BoardTemplate = ({ boardName }) => {
                     )}
                 </div>
 
-                {showChat && 
-                    <ChatWidget 
-                        onClose={() => setShowChat(false)} 
-                        boardName={boardName} 
-                        messages={chatMessages}
-                        onSendMessage={handleSendMessage}
+                {/* 🔥 使用新的 ChatWidget 元件 - 自動處理 Firebase 即時同步 */}
+                {showChat &&
+                    <ChatWidget
+                        onClose={() => setShowChat(false)}
+                        boardName={boardName}
                     />
                 }
             </main>

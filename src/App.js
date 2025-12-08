@@ -1,9 +1,12 @@
 // src/App.js
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 // 🔥 引入 AuthProvider
 import { AuthProvider } from './contexts/AuthContext';
+
+// 🔥 引入聊天訊息清理功能
+import { cleanupExpiredMessages } from './services/chatService';
 
 // 引入基本頁面組件
 import MemberPage from './pages/MemberPage';
@@ -28,7 +31,23 @@ import PostForm from './components/PostForm';
 import PostDetailPage from './pages/PostDetailPage';
 import AITalk from './components/AITalk';
 import EventMapPage from './pages/EventMapPage'; // ⬅️ 確保引入 EventMapPage
+import PublicProfilePage from './pages/PublicProfilePage'; // 🔥 新增：公開的用戶個人檔案頁面
+
 function App() {
+  // 🔥 應用啟動時自動清理過期的聊天訊息（30天前的訊息）
+  useEffect(() => {
+    console.log('🚀 應用啟動：開始清理過期的聊天訊息...');
+    cleanupExpiredMessages()
+      .then((count) => {
+        if (count > 0) {
+          console.log(`✅ 已清理 ${count} 則過期訊息`);
+        }
+      })
+      .catch((error) => {
+        console.error('❌ 清理過期訊息時發生錯誤:', error);
+      });
+  }, []); // 只在應用啟動時執行一次
+
   return (
     <AuthProvider>
       <Router>
@@ -41,7 +60,10 @@ function App() {
 
         {/* 會員目錄頁面路由 */}
         <Route path="/members" element={<MemberPage />} />
-        
+
+        {/* 🔥 公開的用戶個人檔案頁面路由 (查看其他用戶) */}
+        <Route path="/members/:userId" element={<PublicProfilePage />} />
+
         {/* 🎯 會員個人檔案頁面路由 */
         /* /profile 顯示個人資料 */
         /* /profile/edit 編輯個人資料 */
