@@ -14,7 +14,7 @@ const OutfitBoardPage = () => {
         padding: '20px'                 // 內邊距
       }}
     >
-      <BoardTemplate boardName="穿搭" />
+      <BoardTemplate boardName="宿舍" />
     </div>
   );
 };
