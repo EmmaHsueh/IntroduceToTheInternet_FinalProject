@@ -347,7 +347,12 @@ const ProfilePage = () => {
                             flexShrink: 0,
                             overflow: 'hidden'
                         }}>
-                            {userProfile.avatar && (userProfile.avatar.startsWith('http://') || userProfile.avatar.startsWith('https://')) ? (
+                            {/* 🔥 支援三種頭像格式：URL、Base64、Emoji */}
+                            {userProfile.avatar && (
+                                userProfile.avatar.startsWith('http://') ||
+                                userProfile.avatar.startsWith('https://') ||
+                                userProfile.avatar.startsWith('data:image/')  // 🔥 Base64 圖片
+                            ) ? (
                                 <img
                                     src={userProfile.avatar}
                                     alt="用戶頭像"
@@ -358,7 +363,9 @@ const ProfilePage = () => {
                                     }}
                                 />
                             ) : (
-                                AVATAR_MAPPING[userProfile.avatar] || '👤'
+                                <span style={{ fontSize: '3rem' }}>
+                                    {AVATAR_MAPPING[userProfile.avatar] || '👤'}
+                                </span>
                             )}
                         </div>
 

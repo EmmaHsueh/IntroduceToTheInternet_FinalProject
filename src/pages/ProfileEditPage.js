@@ -6,8 +6,9 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
 import { updateUserProfile } from '../services/userService';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../firebase'; 
+// 🔥 不再需要 Firebase Storage
+// import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+// import { storage } from '../firebase'; 
 
 // ------------------------------------
 // 統一配色定義 (淺色活潑大學風格)
@@ -179,42 +180,25 @@ const ProfileEditPage = () => {
                 alert('請選擇圖片檔案');
                 return;
             }
-            // 檢查檔案大小 (限制 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                alert('圖片大小不能超過 5MB');
+            // 🔥 Base64 方案：限制 500KB（避免超過 Firestore 1MB 限制）
+            if (file.size > 500 * 1024) {
+                alert('圖片大小不能超過 500KB\n請使用圖片壓縮工具縮小檔案大小');
                 return;
             }
-            setUploadedImage(file);
-            // 建立預覽 URL
+
+            // 🔥 直接讀取為 Base64
             const reader = new FileReader();
             reader.onloadend = () => {
-                setImagePreview(reader.result);
+                const base64String = reader.result; // 這就是 Base64 編碼的圖片
+                setImagePreview(base64String);
+                setUploadedImage(file); // 保留檔案物件（用於顯示檔名）
             };
             reader.readAsDataURL(file);
         }
     };
 
-    const uploadImageToStorage = async (file, userId) => {
-        try {
-            setUploading(true);
-            // 建立唯一的檔案名稱
-            const timestamp = Date.now();
-            const fileName = `avatars/${userId}_${timestamp}.${file.name.split('.').pop()}`;
-            const storageRef = ref(storage, fileName);
-
-            // 上傳檔案
-            await uploadBytes(storageRef, file);
-
-            // 取得下載 URL
-            const downloadURL = await getDownloadURL(storageRef);
-            setUploading(false);
-            return downloadURL;
-        } catch (error) {
-            setUploading(false);
-            console.error('❌ 上傳圖片失敗:', error);
-            throw error;
-        }
-    };
+    // 🔥 Base64 方案：不再需要上傳到 Firebase Storage
+    // 圖片已經在 handleImageChange 中轉換為 Base64 並存在 imagePreview 中
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -226,33 +210,43 @@ const ProfileEditPage = () => {
 
         try {
             setSaving(true);
-            console.log('📝 準備更新個人資料:', formData);
+            console.log('=== 開始更新個人資料 ===');
+            console.log('📝 表單資料:', formData);
+            console.log('📷 是否有上傳圖片:', !!imagePreview);
 
             let updatedFormData = { ...formData };
 
-            // 如果有上傳照片，先上傳到 Firebase Storage
-            if (uploadedImage) {
-                console.log('📤 正在上傳照片...');
-                const photoURL = await uploadImageToStorage(uploadedImage, currentUser.uid);
-                console.log('✅ 照片上傳成功:', photoURL);
-                // 將照片 URL 設定為頭像
-                updatedFormData.avatar = photoURL;
+            // 🔥 Base64 方案：直接將 Base64 字串存到 avatar 欄位
+            if (imagePreview) {
+                console.log('📤 使用 Base64 圖片...');
+                console.log('Base64 長度:', imagePreview.length);
+
+                // 將 Base64 字串直接設定為頭像
+                updatedFormData.avatar = imagePreview;
+                console.log('✅ 已將 Base64 圖片設定為 avatar 欄位');
+            } else {
+                console.log('ℹ️ 沒有上傳圖片，使用現有頭像:', formData.avatar);
             }
 
             // 呼叫 userService 更新資料
+            console.log('💾 準備儲存到 Firestore...');
             await updateUserProfile(currentUser.uid, updatedFormData);
+            console.log('✅ Firestore 更新成功');
 
             // 重新載入用戶資料
+            console.log('🔄 重新載入用戶資料...');
             await loadUserProfile(currentUser.uid);
+            console.log('✅ 用戶資料已重新載入');
 
             alert('✅ 個人資料更新成功！');
-            console.log('✅ 個人資料已成功更新');
+            console.log('=== 個人資料更新完成 ===');
 
             // 導回個人資料頁
             navigate('/profile');
         } catch (error) {
-            console.error('❌ 更新個人資料失敗:', error);
-            alert(`更新失敗：${error.message}`);
+            console.error('=== 更新個人資料失敗 ===');
+            console.error('❌ 錯誤詳情:', error);
+            alert(`❌ 更新失敗：${error.message}\n\n請查看開發者工具 Console 了解詳細錯誤資訊`);
         } finally {
             setSaving(false);
         }
@@ -592,7 +586,8 @@ const ProfileEditPage = () => {
                                     )}
                                 </div>
                                 <p style={{ fontSize: '0.8em', color: COLOR_OLIVE_GREEN, marginTop: '8px' }}>
-                                    * 建議使用正方形照片,檔案大小不超過 5MB
+                                    * 建議使用正方形照片，檔案大小不超過 <strong>500KB</strong><br />
+                                    * 可使用 <a href="https://tinypng.com" target="_blank" rel="noopener noreferrer" style={{ color: COLOR_BRICK_RED }}>TinyPNG</a> 或 <a href="https://squoosh.app" target="_blank" rel="noopener noreferrer" style={{ color: COLOR_BRICK_RED }}>Squoosh</a> 壓縮圖片
                                 </p>
                             </div>
                         </div>
