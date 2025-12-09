@@ -101,6 +101,15 @@ const ProfileEditPage = () => {
         bio: '',
         gender: '男',
         avatar: 'emoji-bear_face',
+        // 🔥 配對系統所需欄位
+        nativeLanguage: 'zh',
+        learningLanguage: 'en',
+        languageLevel: 'intermediate',
+        interests: [],
+        availability: [],
+        department: '',
+        courses: [],
+        isInternationalStudent: false,
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -121,14 +130,38 @@ const ProfileEditPage = () => {
                 bio: userProfile.bio || '',
                 gender: userProfile.gender || '男',
                 avatar: userProfile.avatar || 'emoji-bear_face',
+                // 🔥 配對系統所需欄位
+                nativeLanguage: userProfile.nativeLanguage || 'zh',
+                learningLanguage: userProfile.learningLanguage || 'en',
+                languageLevel: userProfile.languageLevel || 'intermediate',
+                interests: userProfile.interests || [],
+                availability: userProfile.availability || [],
+                department: userProfile.department || '',
+                courses: userProfile.courses || [],
+                isInternationalStudent: userProfile.isInternationalStudent || false,
             });
             setLoading(false);
         }
     }, [currentUser, userProfile, navigate]);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        const { name, value, type, checked } = e.target;
+        if (type === 'checkbox') {
+            setFormData(prev => ({ ...prev, [name]: checked }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
+    };
+
+    // 處理多選欄位 (興趣、時間等)
+    const handleMultiSelectChange = (field, value) => {
+        setFormData(prev => {
+            const currentValues = prev[field] || [];
+            const newValues = currentValues.includes(value)
+                ? currentValues.filter(v => v !== value)
+                : [...currentValues, value];
+            return { ...prev, [field]: newValues };
+        });
     };
 
     const handleAvatarChange = (key) => {
@@ -300,6 +333,171 @@ const ProfileEditPage = () => {
                                 style={{ ...inputStyle, height: '100px', resize: 'vertical' }}
                                 maxLength="150"
                             />
+                        </div>
+
+                        {/* 🔥 配對系統設定區塊 */}
+                        <div style={{
+                            padding: '25px',
+                            background: `linear-gradient(135deg, ${COLOR_OFF_WHITE} 0%, #fef9f0 100%)`,
+                            borderRadius: '12px',
+                            marginBottom: '30px',
+                            border: `2px solid ${COLOR_BRICK_RED}20`
+                        }}>
+                            <h3 style={{
+                                color: COLOR_BRICK_RED,
+                                marginBottom: '20px',
+                                fontSize: '1.2em',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px'
+                            }}>
+                                🤝 智慧配對系統設定
+                            </h3>
+                            <p style={{ fontSize: '0.9em', color: COLOR_OLIVE_GREEN, marginBottom: '20px' }}>
+                                完善以下資訊，讓系統為你找到最合適的語言交換夥伴、學習小組或室友！
+                            </p>
+
+                            {/* 科系 */}
+                            <div style={{ marginBottom: '20px' }}>
+                                <label htmlFor="department" style={labelStyle}>科系</label>
+                                <input
+                                    type="text"
+                                    id="department"
+                                    name="department"
+                                    value={formData.department}
+                                    onChange={handleChange}
+                                    style={inputStyle}
+                                    placeholder="例如：資訊工程系、英語系"
+                                />
+                            </div>
+
+                            {/* 是否為國際生 */}
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', color: COLOR_DEEP_NAVY }}>
+                                    <input
+                                        type="checkbox"
+                                        name="isInternationalStudent"
+                                        checked={formData.isInternationalStudent}
+                                        onChange={handleChange}
+                                        style={{ marginRight: '10px', width: '18px', height: '18px' }}
+                                    />
+                                    <span style={{ fontWeight: '600' }}>我是國際生 (International Student)</span>
+                                </label>
+                            </div>
+
+                            {/* 母語 */}
+                            <div style={{ marginBottom: '20px' }}>
+                                <label htmlFor="nativeLanguage" style={labelStyle}>母語 Native Language</label>
+                                <select
+                                    id="nativeLanguage"
+                                    name="nativeLanguage"
+                                    value={formData.nativeLanguage}
+                                    onChange={handleChange}
+                                    style={inputStyle}
+                                >
+                                    <option value="zh">中文 (Chinese)</option>
+                                    <option value="en">英文 (English)</option>
+                                    <option value="ja">日文 (Japanese)</option>
+                                    <option value="ko">韓文 (Korean)</option>
+                                    <option value="es">西班牙文 (Spanish)</option>
+                                    <option value="fr">法文 (French)</option>
+                                    <option value="de">德文 (German)</option>
+                                    <option value="other">其他 (Other)</option>
+                                </select>
+                            </div>
+
+                            {/* 想學習的語言 */}
+                            <div style={{ marginBottom: '20px' }}>
+                                <label htmlFor="learningLanguage" style={labelStyle}>想學習的語言 Learning Language</label>
+                                <select
+                                    id="learningLanguage"
+                                    name="learningLanguage"
+                                    value={formData.learningLanguage}
+                                    onChange={handleChange}
+                                    style={inputStyle}
+                                >
+                                    <option value="zh">中文 (Chinese)</option>
+                                    <option value="en">英文 (English)</option>
+                                    <option value="ja">日文 (Japanese)</option>
+                                    <option value="ko">韓文 (Korean)</option>
+                                    <option value="es">西班牙文 (Spanish)</option>
+                                    <option value="fr">法文 (French)</option>
+                                    <option value="de">德文 (German)</option>
+                                    <option value="other">其他 (Other)</option>
+                                </select>
+                            </div>
+
+                            {/* 語言程度 */}
+                            <div style={{ marginBottom: '20px' }}>
+                                <label htmlFor="languageLevel" style={labelStyle}>語言程度 Language Level</label>
+                                <select
+                                    id="languageLevel"
+                                    name="languageLevel"
+                                    value={formData.languageLevel}
+                                    onChange={handleChange}
+                                    style={inputStyle}
+                                >
+                                    <option value="beginner">初學者 (Beginner)</option>
+                                    <option value="intermediate">中級 (Intermediate)</option>
+                                    <option value="advanced">高級 (Advanced)</option>
+                                </select>
+                            </div>
+
+                            {/* 興趣 */}
+                            <div style={{ marginBottom: '20px' }}>
+                                <span style={labelStyle}>興趣 Interests (可複選)</span>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
+                                    {['運動', '電影', '音樂', '閱讀', '旅遊', '美食', '遊戲', '攝影', '藝術', '程式設計'].map(interest => (
+                                        <button
+                                            key={interest}
+                                            type="button"
+                                            onClick={() => handleMultiSelectChange('interests', interest)}
+                                            style={{
+                                                padding: '8px 16px',
+                                                borderRadius: '20px',
+                                                border: `2px solid ${formData.interests.includes(interest) ? COLOR_BRICK_RED : COLOR_LIGHT_BORDER}`,
+                                                background: formData.interests.includes(interest) ? COLOR_BRICK_RED : 'white',
+                                                color: formData.interests.includes(interest) ? 'white' : COLOR_DEEP_NAVY,
+                                                cursor: 'pointer',
+                                                fontSize: '0.9em',
+                                                fontWeight: formData.interests.includes(interest) ? '600' : '500',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            {interest}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* 可用時間 */}
+                            <div style={{ marginBottom: '20px' }}>
+                                <span style={labelStyle}>可用時間 Availability (可複選)</span>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
+                                    {['週一早上', '週一下午', '週一晚上', '週二早上', '週二下午', '週二晚上',
+                                      '週三早上', '週三下午', '週三晚上', '週四早上', '週四下午', '週四晚上',
+                                      '週五早上', '週五下午', '週五晚上', '週末'].map(time => (
+                                        <button
+                                            key={time}
+                                            type="button"
+                                            onClick={() => handleMultiSelectChange('availability', time)}
+                                            style={{
+                                                padding: '8px 16px',
+                                                borderRadius: '20px',
+                                                border: `2px solid ${formData.availability.includes(time) ? COLOR_BRICK_RED : COLOR_LIGHT_BORDER}`,
+                                                background: formData.availability.includes(time) ? COLOR_BRICK_RED : 'white',
+                                                color: formData.availability.includes(time) ? 'white' : COLOR_DEEP_NAVY,
+                                                cursor: 'pointer',
+                                                fontSize: '0.85em',
+                                                fontWeight: formData.availability.includes(time) ? '600' : '500',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            {time}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
 
                         {/* 頭像選擇 */}

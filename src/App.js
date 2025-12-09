@@ -16,6 +16,7 @@ import LoginPage from './pages/LoginPage';
 import BoardsIndexPage from './pages/BoardsIndexPage';
 import ProfilePage from './pages/ProfilePage';
 import ProfileEditPage from './pages/ProfileEditPage';
+import MatchingPage from './pages/MatchingPage';
 
 // 引入看板頁面組件
 import FoodBoardPage from './pages/FoodBoardPage';
@@ -60,6 +61,9 @@ function App() {
 
         {/* 會員目錄頁面路由 */}
         <Route path="/members" element={<MemberPage />} />
+
+        {/* 🔥 智慧配對系統路由 */}
+        <Route path="/matching" element={<MatchingPage />} />
 
         {/* 🔥 公開的用戶個人檔案頁面路由 (查看其他用戶) */}
         <Route path="/members/:userId" element={<PublicProfilePage />} />

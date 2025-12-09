@@ -290,7 +290,15 @@ export const updateUserProfile = async (userId, updateData) => {
     const userRef = doc(db, 'users', userId);
 
     // 只更新允許修改的欄位
-    const allowedFields = ['nickname', 'first_name', 'last_name', 'gender', 'avatar', 'bio'];
+    const allowedFields = [
+      'nickname', 'first_name', 'last_name', 'gender', 'avatar', 'bio',
+      // 🔥 配對系統所需欄位
+      'nativeLanguage', 'learningLanguage', 'languageLevel',
+      'interests', 'availability', 'department', 'courses',
+      'isInternationalStudent', 'studyHabits', 'budgetRange',
+      'sleepSchedule', 'lifestylePreferences', 'roommateGenderPreference',
+      'culturalInterests', 'activityPreferences'
+    ];
     const filteredData = {};
 
     Object.keys(updateData).forEach(key => {

@@ -255,12 +255,12 @@ const FeaturesSection = () => {
       link: '/boards/courses',
     },
     {
-      icon: '👥',
-      titleZh: '會員社群',
-      titleEn: 'Community',
-      descZh: '認識來自世界各地的師大學生',
-      descEn: 'Meet NTNU students from around the world',
-      link: '/members',
+      icon: '🤝',
+      titleZh: '智慧配對',
+      titleEn: 'Smart Matching',
+      descZh: 'AI 智能配對最適合的語言交換、學習夥伴',
+      descEn: 'AI-powered matching for partners & roommates',
+      link: '/matching',
     },
   ];
 
