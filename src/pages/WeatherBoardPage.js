@@ -14,7 +14,7 @@ const WeatherBoardPage = () => {
         padding: '20px'                 // 內邊距
       }}
     >
-      <BoardTemplate boardName="天氣" />
+      <BoardTemplate boardName="國際" />
     </div>
   );
 };

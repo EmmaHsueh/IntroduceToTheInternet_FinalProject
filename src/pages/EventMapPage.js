@@ -203,20 +203,6 @@ const EventMapPage = () => {
                         </button>
                     ))}
                     
-                    {/* 發起揪團按鈕 */}
-                    <button
-                        onClick={() => {
-                            if (!currentUser) {
-                                alert("請先登入才能發起揪團！");
-                                return;
-                            }
-                            setPostLocation({ x: 500, y: 300 }); 
-                            setIsPosting(true);
-                        }}
-                        style={{ ...styles.campusButton, ...styles.postButton }}
-                    >
-                        <FaUsers style={{ marginRight: '5px' }} /> 發起揪團
-                    </button>
                 </div>
 
                 {/* 地圖顯示區域  */}

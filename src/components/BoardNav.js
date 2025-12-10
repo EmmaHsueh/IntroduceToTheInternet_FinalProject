@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 const categories = [
   { name: '食物', link: '/boards/food' },
-  { name: '國家', link: '/boards/weather' }, 
+  { name: '國際', link: '/boards/weather' }, 
   { name: '活動', link: '/boards/events' }, 
   { name: '社團', link: '/boards/clubs' }, 
   { name: '課程', link: '/boards/courses' }, 

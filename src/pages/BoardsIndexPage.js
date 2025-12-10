@@ -23,7 +23,7 @@ const boardData = [
         stats: '貼文: 1200 | 今日: 50'
     },
     { 
-        id: 'countries', 
+        id: 'weather', 
         name: '國際交流', 
         description: '交流國家大小事，分享你的家鄉',
         stats: '貼文: 450 | 今日: 15'
@@ -47,7 +47,7 @@ const boardData = [
         stats: '貼文: 1500 | 今日: 75'
     },
     { 
-        id: 'dormitory', 
+        id: 'outfit', 
         name: '宿舍生活', 
         description: '分享你的宿舍生活，讓每天不孤單',
         stats: '貼文: 300 | 今日: 10'
