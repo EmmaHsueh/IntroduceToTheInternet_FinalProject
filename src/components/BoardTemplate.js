@@ -4,12 +4,12 @@ import Header from './Header'; // 假設 Header 存在
 import BoardNav from './BoardNav'; // 假設 BoardNav 存在
 import PostDetailPage from "../pages/PostDetailPage";
 import PostForm from './PostForm';
-import ChatWidget from './ChatWidget'; // 🔥 新增：引入獨立的 ChatWidget 元件
+import ChatWidget from './ChatWidget'; // 新增：引入獨立的 ChatWidget 元件
 
-// 🔥 新增：引入 Firestore 操作函數
+//  新增：引入 Firestore 操作函數
 import { listenToPosts, createPost, addCommentToPost } from '../services/postService';
 
-// 🔥 新增：引入認證相關功能
+//  新增：引入認證相關功能
 import { useAuth } from '../contexts/AuthContext'; 
 
 
@@ -67,10 +67,9 @@ const Comment = ({ comment }) => (
 
 
 // ------------------------------------
-// 輔助組件 (ChatWidget) - 🔥 已移至獨立檔案 ChatWidget.js
+// 輔助組件 (ChatWidget) -  ChatWidget.js
 // ------------------------------------
 // ChatWidget 現在是從 './ChatWidget' 引入的獨立元件
-// 不再需要在這裡定義
 
 
 // ------------------------------------

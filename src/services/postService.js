@@ -176,7 +176,7 @@ export const addCommentToPost = async (postId, comment) => {
     // 1. 取得指定貼文的參照
     const postRef = doc(db, 'posts', postId);
 
-    // 2. 先取得現有的貼文資料 - 🔥 修正：使用 getDoc 而不是 getDocs
+    // 2. 先取得現有的貼文資料 -  修正：使用 getDoc 而不是 getDocs
     const postSnapshot = await getDoc(postRef);
 
     if (!postSnapshot.exists()) {
@@ -195,16 +195,16 @@ export const addCommentToPost = async (postId, comment) => {
     };
 
     // 4. 更新貼文：新增留言並增加留言數量
-    // 🔑 重點：updateDoc 只會更新指定的欄位，不會覆蓋整個文件
+    //  重點：updateDoc 只會更新指定的欄位，不會覆蓋整個文件
     await updateDoc(postRef, {
       comments: [...existingComments, newComment],
       commentCount: existingComments.length + 1
     });
 
-    console.log('✅ 留言已成功新增');
+    console.log(' 留言已成功新增');
 
   } catch (error) {
-    console.error('❌ 新增留言時發生錯誤:', error);
+    console.error(' 新增留言時發生錯誤:', error);
     throw error;
   }
 };
