@@ -41,8 +41,8 @@ const MOCK_INITIAL_USER = {
 };
 
 const MOCK_USER_POSTS = [
-    { id: 'p1', title: '學校餐廳新菜色評價！', board: '美食看板 🍽️', views: 850, comments: 12, date: '2024/10/01' },
-    { id: 'p2', title: '請問OOO教授的「數據結構」好過嗎？', board: '課程討論 📚', views: 1200, comments: 45, date: '2024/09/25' },
+    { id: 'p1', title: '學校餐廳新菜色評價！', board: '美食看板', views: 850, comments: 12, date: '2024/10/01' },
+    { id: 'p2', title: '請問OOO教授的「數據結構」好過嗎？', board: '課程討論', views: 1200, comments: 45, date: '2024/09/25' },
 ];
 
 const MOCK_USER_COMMENTS = [
@@ -76,7 +76,7 @@ const ProfilePage = () => {
 
             try {
                 setLoading(true);
-                console.log('📥 載入用戶貼文和留言...');
+                console.log('載入用戶貼文和留言...');
 
                 const userName = userProfile.nickname || authUser.email?.split('@')[0] || '匿名用戶';
 
@@ -90,9 +90,9 @@ const ProfilePage = () => {
                 setUserComments(comments);
                 setLoading(false);
 
-                console.log(`✅ 成功載入 ${posts.length} 篇貼文和 ${comments.length} 則留言`);
+                console.log(`成功載入 ${posts.length} 篇貼文和 ${comments.length} 則留言`);
             } catch (error) {
-                console.error('❌ 載入用戶資料失敗:', error);
+                console.error('載入用戶資料失敗:', error);
                 setLoading(false);
             }
         };
@@ -164,15 +164,15 @@ const ProfilePage = () => {
         }
 
         try {
-            console.log('🗑️ 刪除貼文:', postId);
+            console.log('刪除貼文:', postId);
             await deletePost(postId, authUser.uid);
 
             // 從列表中移除
             setUserPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
 
-            alert('✅ 貼文已成功刪除');
+            alert('貼文已成功刪除');
         } catch (error) {
-            console.error('❌ 刪除貼文失敗:', error);
+            console.error('刪除貼文失敗:', error);
             alert(`刪除失敗：${error.message}`);
         }
     };
@@ -184,16 +184,16 @@ const ProfilePage = () => {
         }
 
         try {
-            console.log('🗑️ 刪除留言:', commentId);
+            console.log('刪除留言:', commentId);
             const userName = userProfile.nickname || authUser.email?.split('@')[0] || '匿名用戶';
             await deleteComment(postId, commentId, authUser.uid, userName);
 
             // 從列表中移除
             setUserComments(prevComments => prevComments.filter(c => c.id !== commentId));
 
-            alert('✅ 留言已成功刪除');
+            alert('留言已成功刪除');
         } catch (error) {
-            console.error('❌ 刪除留言失敗:', error);
+            console.error('刪除留言失敗:', error);
             alert(`刪除失敗：${error.message}`);
         }
     };
@@ -254,7 +254,7 @@ const ProfilePage = () => {
                                     onMouseOver={e => e.currentTarget.style.backgroundColor = '#a02820'}
                                     onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_BRICK_RED}
                                 >
-                                    🗑️ 刪除
+                                    刪除
                                 </button>
                             </div>
                         </div>
@@ -307,7 +307,7 @@ const ProfilePage = () => {
                                     onMouseOver={e => e.currentTarget.style.backgroundColor = '#a02820'}
                                     onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_BRICK_RED}
                                 >
-                                    🗑️ 刪除
+                                    刪除
                                 </button>
                             </div>
                         </div>
@@ -393,15 +393,15 @@ const ProfilePage = () => {
                                         e.currentTarget.style.transform = 'translateY(0)';
                                     }}
                                 >
-                                    ✏️ 編輯個人檔案
+                                    編輯個人檔案
                                 </button>
                             </div>
 
                             {/* 其他個人資訊 */}
                             <div style={{ marginBottom: '15px', color: COLOR_OLIVE_GREEN, fontSize: '1em' }}>
-                                <div style={{ marginBottom: '5px' }}>📧 電子郵件: <span style={{ color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{userProfile.email}</span></div>
-                                <div style={{ marginBottom: '5px' }}>👤 真實姓名: <span style={{ color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{userProfile.last_name}{userProfile.first_name}</span></div>
-                                <div>🚻 性別: <span style={{ color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{userProfile.gender}</span></div>
+                                <div style={{ marginBottom: '5px' }}>電子郵件: <span style={{ color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{userProfile.email}</span></div>
+                                <div style={{ marginBottom: '5px' }}>真實姓名: <span style={{ color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{userProfile.last_name}{userProfile.first_name}</span></div>
+                                <div>性別: <span style={{ color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{userProfile.gender}</span></div>
                             </div>
 
                             <p style={{
@@ -426,7 +426,7 @@ const ProfilePage = () => {
                             onMouseOver={e => e.currentTarget.style.borderBottom = `3px solid ${COLOR_MORANDI_BROWN}`}
                             onMouseOut={e => e.currentTarget.style.borderBottom = activeTab === 'posts' ? `3px solid ${COLOR_MORANDI_BROWN}` : '3px solid transparent'}
                         >
-                            📝 我的貼文 ({userPosts.length})
+                            我的貼文 ({userPosts.length})
                         </div>
                         <div 
                             style={{ ...getTabStyle('comments', activeTab), cursor: 'pointer' }} 
@@ -434,7 +434,7 @@ const ProfilePage = () => {
                             onMouseOver={e => e.currentTarget.style.borderBottom = `3px solid ${COLOR_MORANDI_BROWN}`}
                             onMouseOut={e => e.currentTarget.style.borderBottom = activeTab === 'comments' ? `3px solid ${COLOR_MORANDI_BROWN}` : '3px solid transparent'}
                         >
-                            💬 我的留言 ({userComments.length})
+                            我的留言 ({userComments.length})
                         </div>
                     </div>
 

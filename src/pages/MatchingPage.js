@@ -131,7 +131,7 @@ const HeroSection = () => (
       marginBottom: '15px',
       fontWeight: '800',
     }}>
-      智慧配對系統 🤝
+      智慧配對系統 
     </h1>
     <p style={{
       fontSize: 'clamp(1rem, 2vw, 1.3rem)',

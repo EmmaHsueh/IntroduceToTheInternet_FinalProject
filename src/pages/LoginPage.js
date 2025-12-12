@@ -63,7 +63,7 @@ const LoginPage = () => {
                             }}
                             onClick={switchToLogin}
                         >
-                            🔐 登入
+                            登入
                         </div>
                         <div 
                             style={{ 
@@ -73,7 +73,7 @@ const LoginPage = () => {
                             }}
                             onClick={switchToRegister}
                         >
-                            📝 註冊
+                            註冊
                         </div>
                     </div>
 

@@ -192,16 +192,16 @@ const PublicProfilePage = () => {
 
                             <div style={{ marginBottom: '15px', color: COLOR_OLIVE_GREEN, fontSize: '1em' }}>
                                 <div style={{ marginBottom: '5px' }}>
-                                    📧 電子郵件: <span style={{ color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{user.email}</span>
+                                    電子郵件: <span style={{ color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{user.email}</span>
                                 </div>
                                 {user.first_name && user.last_name && (
                                     <div style={{ marginBottom: '5px' }}>
-                                        👤 真實姓名: <span style={{ color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{user.last_name}{user.first_name}</span>
+                                        真實姓名: <span style={{ color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{user.last_name}{user.first_name}</span>
                                     </div>
                                 )}
                                 {user.gender && (
                                     <div>
-                                        🚻 性別: <span style={{ color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{user.gender}</span>
+                                        性別: <span style={{ color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{user.gender}</span>
                                     </div>
                                 )}
                             </div>
@@ -225,10 +225,10 @@ const PublicProfilePage = () => {
                     {/* 貼文/留言切換 Tab */}
                     <div style={{ display: 'flex', borderBottom: `1px solid ${COLOR_LIGHT_BORDER}`, marginBottom: '25px' }}>
                         <div style={getTabStyle('posts')} onClick={() => setActiveTab('posts')}>
-                            📝 貼文 ({posts.length})
+                            貼文 ({posts.length})
                         </div>
                         <div style={getTabStyle('comments')} onClick={() => setActiveTab('comments')}>
-                            💬 留言 ({comments.length})
+                            留言 ({comments.length})
                         </div>
                     </div>
 

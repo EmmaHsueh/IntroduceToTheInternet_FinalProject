@@ -104,7 +104,7 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
         setImages(prev => prev.map(img => 
             img.id === targetImage.id ? { ...img, isProcessing: true } : img
         ));
-        setImageMessage('ℹ️ 正在處理圖片去背...');
+        setImageMessage('正在處理圖片去背...');
 
         try {
             const resultUrl = await removeBgFromFile(targetImage.file);
@@ -113,10 +113,10 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
                     ? { ...img, url: resultUrl, isProcessing: false, isProcessed: true } 
                     : img
             ));
-            setImageMessage('✅ 圖片去背成功！');
+            setImageMessage('圖片去背成功！');
         } catch (error) {
             console.error('去背失敗:', error);
-            setImageMessage(`❌ 去背失敗：${error.message}`);
+            setImageMessage(`去背失敗：${error.message}`);
             setImages(prev => prev.map(img => 
                 img.id === targetImage.id ? { ...img, isProcessing: false } : img
             ));
@@ -134,12 +134,12 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
         e.preventDefault();
 
         if (!title.trim() || !content.trim()) {
-            setGlobalMessage('⚠️ 標題和內容都不能為空！');
+            setGlobalMessage('標題和內容都不能為空！');
             return;
         }
 
         setIsSubmitting(true);
-        setGlobalMessage('🤖 正在進行 AI 內容審查...');
+        setGlobalMessage('正在進行 AI 內容審查...');
 
         try {
             // 1. 呼叫後端 Moderation API
@@ -169,13 +169,13 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
                     .filter(key => checkResult.categories[key])
                     .join(', ');
 
-                setGlobalMessage(`❌ 內容包含敏感詞彙，無法發布。\n(偵測原因: ${reasons})`);
+                setGlobalMessage(`內容包含敏感詞彙，無法發布。\n(偵測原因: ${reasons})`);
                 setIsSubmitting(false);
                 return; // ⛔️ 擋住
             }
             
             // 審查通過，處理圖片
-            setGlobalMessage('✅ 審查通過！正在發布貼文...');
+            setGlobalMessage('審查通過！正在發布貼文...');
             const base64Images = await Promise.all(
                 images.map(img => blobUrlToBase64(img.url))
             );
@@ -191,7 +191,7 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
 
         } catch (error) {
             console.error('處理失敗:', error);
-            setGlobalMessage(`❌ 發生錯誤：${error.message}`);
+            setGlobalMessage(`發生錯誤：${error.message}`);
             setIsSubmitting(false);
         }
     };

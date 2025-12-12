@@ -133,7 +133,7 @@ export const AuthProvider = ({ children }) => {
         setUserProfile(userDoc.data());
       } else {
         // 🔥 如果找不到用戶資料，自動建立一個
-        console.warn('⚠️ Firestore 中找不到用戶資料，正在自動建立...');
+        console.warn('Firestore 中找不到用戶資料，正在自動建立...');
 
         const newUserProfile = {
           uid: uid,
@@ -150,12 +150,12 @@ export const AuthProvider = ({ children }) => {
 
         // 建立 Firestore 文檔
         await setDoc(doc(db, 'users', uid), newUserProfile);
-        console.log('✅ 已自動建立用戶 Firestore 文檔');
+        console.log('已自動建立用戶 Firestore 文檔');
 
         setUserProfile(newUserProfile);
       }
     } catch (error) {
-      console.error('❌ 載入用戶資料錯誤:', error);
+      console.error('載入用戶資料錯誤:', error);
       // 發生錯誤時也提供基本資訊
       setUserProfile({
         uid: uid,

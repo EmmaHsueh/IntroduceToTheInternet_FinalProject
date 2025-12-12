@@ -24,10 +24,10 @@ const ChatWidget = ({ onClose, boardName }) => {
 
     // 監聽聊天訊息
     useEffect(() => {
-        console.log('💬 ChatWidget: 開始監聽【' + boardName + '】聊天室');
+        console.log('ChatWidget: 開始監聽【' + boardName + '】聊天室');
 
         const unsubscribe = listenToChatMessages(boardName, (newMessages) => {
-            console.log('✅ ChatWidget: 收到 ' + newMessages.length + ' 則訊息');
+            console.log('ChatWidget: 收到 ' + newMessages.length + ' 則訊息');
             setMessages(newMessages);
             setLoading(false);
         });
@@ -50,7 +50,7 @@ const ChatWidget = ({ onClose, boardName }) => {
 
         // 檢查是否已登入
         if (!currentUser) {
-            alert('⚠️ 請先登入才能發送訊息！');
+            alert('請先登入才能發送訊息！');
             return;
         }
 
@@ -66,9 +66,9 @@ const ChatWidget = ({ onClose, boardName }) => {
                 content: messageContent
             });
 
-            console.log('✅ 訊息已發送');
+            console.log('訊息已發送');
         } catch (error) {
-            console.error('❌ 發送訊息失敗:', error);
+            console.error('發送訊息失敗:', error);
             alert('發送失敗：' + error.message);
             setInput(messageContent); // 發送失敗時恢復輸入內容
         } finally {
@@ -123,7 +123,7 @@ const ChatWidget = ({ onClose, boardName }) => {
                 borderTopLeftRadius: '12px',
                 borderTopRightRadius: '12px',
             }}>
-                <div style={{ fontWeight: 'bold' }}>💬 {boardName} 即時聊天室</div>
+                <div style={{ fontWeight: 'bold' }}>{boardName} 即時聊天室</div>
                 <button
                     onClick={onClose}
                     style={{

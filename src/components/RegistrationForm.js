@@ -103,7 +103,7 @@ const RegistrationForm = ({ switchToLogin }) => {
                 bio: '這個人很懶，什麼都沒留下。'
             });
 
-            setSuccess('✅ 註冊成功！即將跳轉至首頁...');
+            setSuccess('註冊成功！即將跳轉至首頁...');
             setTimeout(() => {
                 navigate('/');
             }, 1500);
@@ -262,7 +262,7 @@ const RegistrationForm = ({ switchToLogin }) => {
                         fontSize: '14px',
                         border: `1px solid ${COLOR_BRICK_RED}`
                     }}>
-                        ⚠️ {error}
+                        {error}
                     </div>
                 )}
 
@@ -348,7 +348,7 @@ const RegistrationForm = ({ switchToLogin }) => {
                             onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_LIGHT_BORDER}
                             onMouseOut={e => e.currentTarget.style.backgroundColor = 'white'}
                         >
-                            上傳自己的頭像 📤
+                            上傳自己的頭像
                         </button>
                     </div>
                 </div>

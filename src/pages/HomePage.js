@@ -403,7 +403,7 @@ const LiveFeedSection = () => {
                   fontSize: '0.85rem',
                   color: COLORS.MORANDI_BROWN,
                 }}>
-                  👤 {post.authorName || '匿名'} • 💬 {post.commentCount || 0} 則留言
+                  {post.authorName || '匿名'} • {post.commentCount || 0} 則留言
                 </div>
               </Link>
             ))}

@@ -22,7 +22,7 @@ const MediaDisplay = () => {
 
     return (
         <div style={sectionStyle}>
-            <h2>🖼️ 網站媒體資源展示</h2>
+            <h2>網站媒體資源展示</h2>
             <p style={{ color: 'gray' }}>這些是從 WordPress 附件列表中提取出的圖片佔位符。</p>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '30px', marginTop: '30px' }}>

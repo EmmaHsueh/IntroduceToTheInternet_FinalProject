@@ -211,42 +211,42 @@ const ProfileEditPage = () => {
         try {
             setSaving(true);
             console.log('=== 開始更新個人資料 ===');
-            console.log('📝 表單資料:', formData);
-            console.log('📷 是否有上傳圖片:', !!imagePreview);
+            console.log('表單資料:', formData);
+            console.log('是否有上傳圖片:', !!imagePreview);
 
             let updatedFormData = { ...formData };
 
             // 🔥 Base64 方案：直接將 Base64 字串存到 avatar 欄位
             if (imagePreview) {
-                console.log('📤 使用 Base64 圖片...');
+                console.log('使用 Base64 圖片...');
                 console.log('Base64 長度:', imagePreview.length);
 
                 // 將 Base64 字串直接設定為頭像
                 updatedFormData.avatar = imagePreview;
-                console.log('✅ 已將 Base64 圖片設定為 avatar 欄位');
+                console.log('已將 Base64 圖片設定為 avatar 欄位');
             } else {
-                console.log('ℹ️ 沒有上傳圖片，使用現有頭像:', formData.avatar);
+                console.log('沒有上傳圖片，使用現有頭像:', formData.avatar);
             }
 
             // 呼叫 userService 更新資料
-            console.log('💾 準備儲存到 Firestore...');
+            console.log('準備儲存到 Firestore...');
             await updateUserProfile(currentUser.uid, updatedFormData);
-            console.log('✅ Firestore 更新成功');
+            console.log('Firestore 更新成功');
 
             // 重新載入用戶資料
-            console.log('🔄 重新載入用戶資料...');
+            console.log('重新載入用戶資料...');
             await loadUserProfile(currentUser.uid);
-            console.log('✅ 用戶資料已重新載入');
+            console.log('用戶資料已重新載入');
 
-            alert('✅ 個人資料更新成功！');
+            alert('個人資料更新成功！');
             console.log('=== 個人資料更新完成 ===');
 
             // 導回個人資料頁
             navigate('/profile');
         } catch (error) {
             console.error('=== 更新個人資料失敗 ===');
-            console.error('❌ 錯誤詳情:', error);
-            alert(`❌ 更新失敗：${error.message}\n\n請查看開發者工具 Console 了解詳細錯誤資訊`);
+            console.error('錯誤詳情:', error);
+            alert(`更新失敗：${error.message}\n\n請查看開發者工具 Console 了解詳細錯誤資訊`);
         } finally {
             setSaving(false);
         }
@@ -270,7 +270,7 @@ const ProfileEditPage = () => {
 
             <div style={{ maxWidth: '700px', margin: '30px auto', padding: '0 20px' }}>
                 <h1 style={{ color: COLOR_DEEP_NAVY, borderBottom: `3px solid ${COLOR_BRICK_RED}`, paddingBottom: '15px', marginBottom: '30px', fontWeight: '600' }}>
-                    ✏️ 編輯個人資料
+                    編輯個人資料
                 </h1>
                 
                 <div style={{ backgroundColor: 'white', padding: '30px', borderRadius: '12px', boxShadow: '0 6px 15px rgba(0,0,0,0.08)' }}>
@@ -345,7 +345,7 @@ const ProfileEditPage = () => {
                                 alignItems: 'center',
                                 gap: '10px'
                             }}>
-                                🤝 智慧配對系統設定
+                                智慧配對系統設定
                             </h3>
                             <p style={{ fontSize: '0.9em', color: COLOR_OLIVE_GREEN, marginBottom: '20px' }}>
                                 完善以下資訊，讓系統為你找到最合適的語言交換夥伴、學習小組或室友！
@@ -547,7 +547,7 @@ const ProfileEditPage = () => {
                                             transition: 'background-color 0.2s',
                                         }}
                                     >
-                                        📸 選擇照片
+                                        選擇照片
                                     </label>
 
                                     {imagePreview && (

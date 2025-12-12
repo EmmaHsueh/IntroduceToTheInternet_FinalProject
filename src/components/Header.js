@@ -200,7 +200,7 @@ const Header = () => {
                                             onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
                                             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                         >
-                                            👤 個人資料
+                                            個人資料
                                         </Link>
 
                                         {/* 編輯個人資料連結 */}
@@ -218,7 +218,7 @@ const Header = () => {
                                             onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
                                             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                         >
-                                            ✏️ 編輯個人資料
+                                            編輯個人資料
                                         </Link>
 
                                         {/* 登出按鈕 */}
@@ -244,7 +244,7 @@ const Header = () => {
                                                 e.currentTarget.style.backgroundColor = 'transparent';
                                             }}
                                         >
-                                            🚪 登出
+                                            登出
                                         </button>
                                     </div>
                                 )}

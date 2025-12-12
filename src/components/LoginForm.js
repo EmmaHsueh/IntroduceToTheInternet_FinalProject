@@ -32,7 +32,7 @@ const LoginForm = ({ switchToRegister }) => {
 
         try {
             await login(email, password);
-            setSuccess('✅ 登入成功！即將跳轉到首頁...');
+            setSuccess('登入成功！即將跳轉到首頁...');
             // 延遲跳轉，讓用戶看到成功訊息
             setTimeout(() => {
                 navigate('/');
@@ -64,7 +64,7 @@ const LoginForm = ({ switchToRegister }) => {
 
         try {
             await loginWithGoogle();
-            setSuccess('✅ Google 登入成功！即將跳轉到首頁...');
+            setSuccess('Google 登入成功！即將跳轉到首頁...');
             setTimeout(() => {
                 navigate('/');
             }, 1500);

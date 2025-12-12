@@ -18,31 +18,31 @@ const COLOR_LIGHT_BORDER = '#e0e0e0';  // 極淺邊框
 const boardData = [
     { 
         id: 'food', 
-        name: '美食看板 🍽️', 
+        name: '美食看板', 
         description: '分享校園周邊及台北美食的心得與推薦，讓你的味蕾不孤單！',
         stats: '貼文: 1200 | 今日: 50'
     },
     { 
         id: 'weather', 
-        name: '國際交流', 
+        name: '國際交流區', 
         description: '交流國家大小事，分享你的家鄉',
         stats: '貼文: 450 | 今日: 15'
     },
     { 
         id: 'events', 
-        name: '活動情報站 📅', 
+        name: '活動情報站', 
         description: '校內外大小活動、講座、演講資訊集中討論區。',
         stats: '貼文: 890 | 今日: 30'
     },
     { 
         id: 'clubs', 
-        name: '社團與招募 🎭', 
+        name: '社團與招募', 
         description: '社團活動公告、新成員招募、社團心得交流。',
         stats: '貼文: 620 | 今日: 25'
     },
     { 
         id: 'courses', 
-        name: '課程討論區 📚', 
+        name: '課程討論區', 
         description: '課堂評價、教授推薦、考試心得分享。',
         stats: '貼文: 1500 | 今日: 75'
     },
@@ -54,7 +54,7 @@ const boardData = [
     },
     { 
         id: 'other', 
-        name: '綜合討論區 💬', 
+        name: '綜合討論區', 
         description: '所有無法歸類的雜談、心情抒發、閒聊等。',
         stats: '貼文: 2000 | 今日: 100'
     },
@@ -114,7 +114,7 @@ const BoardsIndexPage = () => (
                 marginBottom: '30px',
                 fontWeight: '500' 
             }}>
-                <span style={{ fontSize: '1.2em', marginRight: '10px' }}>📢</span> 所有討論區索引
+                <span style={{ fontSize: '1.2em', marginRight: '10px' }}></span> 所有討論區索引
             </h2>
             
             <div className="board-cards-container" style={{ 

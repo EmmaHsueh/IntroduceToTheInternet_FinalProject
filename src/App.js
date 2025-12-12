@@ -37,15 +37,15 @@ import PublicProfilePage from './pages/PublicProfilePage'; // 🔥 新增：公�
 function App() {
   // 🔥 應用啟動時自動清理過期的聊天訊息（30天前的訊息）
   useEffect(() => {
-    console.log('🚀 應用啟動：開始清理過期的聊天訊息...');
+    console.log('應用啟動：開始清理過期的聊天訊息...');
     cleanupExpiredMessages()
       .then((count) => {
         if (count > 0) {
-          console.log(`✅ 已清理 ${count} 則過期訊息`);
+          console.log(`已清理 ${count} 則過期訊息`);
         }
       })
       .catch((error) => {
-        console.error('❌ 清理過期訊息時發生錯誤:', error);
+        console.error('清理過期訊息時發生錯誤:', error);
       });
   }, []); // 只在應用啟動時執行一次
 

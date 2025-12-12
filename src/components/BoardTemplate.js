@@ -130,18 +130,18 @@ const BoardTemplate = ({ boardName }) => {
 
     // 🔥 修改：從 Firestore 即時監聽貼文（取代 localStorage）
     useEffect(() => {
-        console.log(`📡 開始監聽【${boardName}】看板的貼文...`);
+        console.log(`開始監聽【${boardName}】看板的貼文...`);
 
         // 使用 listenToPosts 開始監聽
         const unsubscribe = listenToPosts(boardName, (newPosts) => {
-            console.log(`✅ 收到【${boardName}】看板的 ${newPosts.length} 篇貼文`);
+            console.log(`收到【${boardName}】看板的 ${newPosts.length} 篇貼文`);
             setPosts(newPosts);
             setLoading(false); // 載入完成
         });
 
         // ⚠️ 重要：當組件卸載或 boardName 改變時，停止監聽
         return () => {
-            console.log(`🔌 停止監聽【${boardName}】看板`);
+            console.log(`停止監聽【${boardName}】看板`);
             unsubscribe();
         };
     }, [boardName]); // 當 boardName 改變時重新監聽
@@ -153,12 +153,12 @@ const BoardTemplate = ({ boardName }) => {
     const handleNewPostSubmit = async (title, content, imageUrls) => {
         try {
             if (!currentUser) {
-                const errMsg = '⚠️ 請先登入才能發文！';
+                const errMsg = '請先登入才能發文！';
                 alert(errMsg);
                 throw new Error(errMsg); 
             }
 
-            console.log('📝 準備發送貼文到 Firestore...');
+            console.log('準備發送貼文到 Firestore...');
 
             // 呼叫 createPost 將貼文存入 Firestore
             const newPostId = await createPost({
@@ -170,7 +170,7 @@ const BoardTemplate = ({ boardName }) => {
                 imageUrls: imageUrls || []
             });
 
-            console.log(`✅ 貼文已成功發表！ID: ${newPostId}`);
+            console.log(`貼文已成功發表！ID: ${newPostId}`);
 
             // ----------------------------------------------------
             // 🎯 關鍵動作：這裡會把狀態設為 false，畫面就會自動跳回文章列表
@@ -178,7 +178,7 @@ const BoardTemplate = ({ boardName }) => {
             setIsPosting(false); 
 
         } catch (error) {
-            console.error('❌ 發文失敗:', error);
+            console.error('發文失敗:', error);
             alert(`發文失敗：${error.message}`);
             // 🔥 重要：拋出錯誤，讓 PostForm 知道失敗了，不要清空表單
             throw error;
@@ -237,11 +237,11 @@ const BoardTemplate = ({ boardName }) => {
                                 try {
                                     // ⚠️ 檢查用戶是否已登入
                                     if (!currentUser) {
-                                        alert('⚠️ 請先登入才能留言！');
+                                        alert('請先登入才能留言！');
                                         return;
                                     }
 
-                                    console.log('💬 準備新增留言到 Firestore...');
+                                    console.log('準備新增留言到 Firestore...');
 
                                     // 🔥 使用 addCommentToPost 將留言存入 Firestore
                                     await addCommentToPost(postId, {
@@ -249,7 +249,7 @@ const BoardTemplate = ({ boardName }) => {
                                         content
                                     });
 
-                                    console.log('✅ 留言已成功新增！');
+                                    console.log('留言已成功新增！');
 
                                     // 🔑 重點：不需要手動更新 posts state！
                                     // onSnapshot 會自動偵測 Firestore 的變化
@@ -267,7 +267,7 @@ const BoardTemplate = ({ boardName }) => {
                                     }
 
                                 } catch (error) {
-                                    console.error('❌ 留言失敗:', error);
+                                    console.error('留言失敗:', error);
                                     alert(`留言失敗：${error.message}`);
                                 }
                             }}
@@ -303,7 +303,7 @@ const BoardTemplate = ({ boardName }) => {
                                     onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_OLIVE_GREEN}
                                     onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN}
                                 >
-                                    💬 即時聊天室
+                                    即時聊天室
                                 </button>
                             </div>
 

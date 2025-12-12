@@ -15,14 +15,14 @@ const MemberDirectory = () => {
         const loadMembers = async () => {
             try {
                 setLoading(true);
-                console.log('📥 開始載入會員名錄...');
+                console.log('開始載入會員名錄...');
                 const users = await getAllUsers();
                 setAllMembers(users);
                 setFilteredMembers(users);
                 setLoading(false);
-                console.log(`✅ 成功載入 ${users.length} 位會員`);
+                console.log(`成功載入 ${users.length} 位會員`);
             } catch (err) {
-                console.error('❌ 載入會員失敗:', err);
+                console.error('載入會員失敗:', err);
                 setError('載入會員資料失敗，請稍後再試');
                 setLoading(false);
             }
@@ -61,7 +61,7 @@ const MemberDirectory = () => {
     if (error) {
         return (
             <div style={{ padding: '20px', textAlign: 'center' }}>
-                <h2 style={{ color: '#c9362a' }}>❌ {error}</h2>
+                <h2 style={{ color: '#c9362a' }}>{error}</h2>
             </div>
         );
     }

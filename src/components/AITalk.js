@@ -70,17 +70,17 @@ export default function AITalk() {
       addMessage({ id: Date.now() + 1, role: 'assistant', text: reply });
 
     } catch (err) {
-      // 💡 關鍵修改 3: 將錯誤訊息顯示出來，而不是寫死的回覆
-      console.error('chat error', err);
-      
-      // 顯示錯誤訊息。如果是我們自己拋出的 Error，err.message 就是後端回傳的 reply 內容
-      const errorText = err.message || '服務暫時無法使用，請檢查網路。';
-      
-      addMessage({ id: Date.now() + 2, role: 'assistant', text: errorText });
-    } finally {
-      setSending(false);
-    }
-  };
+      // 💡 關鍵修改 3: 將錯誤訊息顯示出來，而不是寫死的回覆
+      console.error('chat error', err);
+      
+      // 顯示錯誤訊息。如果是我們自己拋出的 Error，err.message 就是後端回傳的 reply 內容
+      const errorText = err.message || '服務暫時無法使用，請檢查網路。';
+     
+      addMessage({ id: Date.now() + 2, role: 'assistant', text: errorText });
+    } finally {
+      setSending(false);
+    }
+  };
 
   const onKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
