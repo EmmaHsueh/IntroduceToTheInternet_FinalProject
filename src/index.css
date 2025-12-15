@@ -1,1 +1,12 @@
-html,body,#root{height:100%;margin:0;font-family:'Noto Sans TC',sans-serif;} img{max-width:100%;}
+html,body,#root{
+  height:100%;
+  margin:0;
+  font-family:'Noto Sans TC',sans-serif;
+  /* 全局背景色 - 與首頁漸層起始色一致，避免載入動畫後的白屏 */
+  background: linear-gradient(135deg, #1e2a38 0%, #454f3b 100%);
+  background-attachment: fixed; /* 背景固定不滾動 */
+}
+
+img{
+  max-width:100%;
+}

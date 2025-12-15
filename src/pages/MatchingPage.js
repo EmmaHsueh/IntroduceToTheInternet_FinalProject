@@ -10,6 +10,8 @@ import {
   updateMatchingPreferences
 } from '../services/matchingService';
 import { Link } from 'react-router-dom';
+import Icon from '../components/Icons';
+import { AvatarIcon } from '../components/Icons';
 
 // 顏色常數
 const COLORS = {
@@ -158,7 +160,7 @@ const MatchTypeSelection = ({ onSelectMatch }) => {
   const matchTypes = [
     {
       id: 'language',
-      icon: '🗣️',
+      iconType: 'comments',
       titleZh: '語言交換配對',
       titleEn: 'Language Exchange',
       descZh: '找到母語者練習中英文，互相學習、互相進步',
@@ -168,7 +170,7 @@ const MatchTypeSelection = ({ onSelectMatch }) => {
     },
     {
       id: 'study',
-      icon: '📚',
+      iconType: 'book',
       titleZh: '學習夥伴配對',
       titleEn: 'Study Buddy Matching',
       descZh: '根據科系、課程、學習習慣找到最佳讀書夥伴',
@@ -178,7 +180,7 @@ const MatchTypeSelection = ({ onSelectMatch }) => {
     },
     {
       id: 'roommate',
-      icon: '🏠',
+      iconType: 'home',
       titleZh: '室友配對',
       titleEn: 'Roommate Finder',
       descZh: '根據生活習慣、預算、作息找到理想室友',
@@ -188,7 +190,7 @@ const MatchTypeSelection = ({ onSelectMatch }) => {
     },
     {
       id: 'cultural',
-      icon: '🌏',
+      iconType: 'worldglobe',
       titleZh: '文化體驗配對',
       titleEn: 'Cultural Exchange',
       descZh: '國際生與本地生互相交流，體驗不同文化',
@@ -240,11 +242,12 @@ const MatchTypeSelection = ({ onSelectMatch }) => {
           >
             {/* Icon */}
             <div style={{
-              fontSize: '4rem',
               marginBottom: '20px',
               textAlign: 'center',
+              display: 'flex',
+              justifyContent: 'center',
             }}>
-              {type.icon}
+              <Icon type={type.iconType} size={64} color={type.color} />
             </div>
 
             {/* Title */}
@@ -294,7 +297,9 @@ const MatchTypeSelection = ({ onSelectMatch }) => {
                     position: 'absolute',
                     left: 0,
                     color: type.color,
-                  }}>✓</span>
+                  }}>
+                    <Icon type="success" size={14} color={type.color} />
+                  </span>
                   {feature}
                 </li>
               ))}
@@ -366,7 +371,9 @@ const MatchResults = ({ matchType, results, loading, onBack, currentUser }) => {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '50px', color: COLORS.OLIVE_GREEN }}>
-          <div style={{ fontSize: '3rem', marginBottom: '20px' }}>🔍</div>
+          <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center' }}>
+            <Icon type="search" size={48} color={COLORS.OLIVE_GREEN} />
+          </div>
           <p style={{ fontSize: '1.2rem' }}>正在為你尋找最佳配對...</p>
         </div>
       ) : results.length === 0 ? (
@@ -376,7 +383,9 @@ const MatchResults = ({ matchType, results, loading, onBack, currentUser }) => {
           borderRadius: '15px',
           textAlign: 'center',
         }}>
-          <div style={{ fontSize: '4rem', marginBottom: '20px' }}>😢</div>
+          <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center' }}>
+            <Icon type="sad" size={64} color={COLORS.MORANDI_BROWN} />
+          </div>
           <h3 style={{ color: COLORS.DEEP_NAVY, marginBottom: '15px' }}>暫時找不到合適的配對</h3>
           <p style={{ color: COLORS.OLIVE_GREEN, marginBottom: '20px' }}>
             建議完善你的個人檔案資料，或稍後再試！
@@ -481,10 +490,9 @@ const MatchCard = ({ user, matchType, currentUser }) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '1.8rem',
           marginRight: '15px',
         }}>
-          {user.avatar || '👤'}
+          <AvatarIcon avatar={user.avatar} size={28} color={COLORS.OLIVE_GREEN} />
         </div>
         <div>
           <h4 style={{

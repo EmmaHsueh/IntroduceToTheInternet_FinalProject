@@ -6,9 +6,10 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
 import { updateUserProfile } from '../services/userService';
+import { AVATAR_OPTIONS, AvatarIcon } from '../components/Icons';
 // 🔥 不再需要 Firebase Storage
 // import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-// import { storage } from '../firebase'; 
+// import { storage } from '../firebase';
 
 // ------------------------------------
 // 統一配色定義 (淺色活潑大學風格)
@@ -23,17 +24,6 @@ const COLOR_OFF_WHITE = '#f3f3e6';     // 米黃/淺色 - 主要背景色
 // ------------------------------------
 // 🎯 已移除內嵌 Header：現在使用從 '../components/Header' 導入的公版 Header。
 // ------------------------------------
-
-// ------------------------------------
-// 模擬資料 (從 ProfilePage 複製過來)
-// ------------------------------------
-const AVATAR_OPTIONS = [
-    { key: 'emoji-bear_face', emoji: '🐻', label: '熊熊' },
-    { key: 'emoji-cat_paw', emoji: '🐾', label: '貓掌' },
-    { key: 'emoji-student', emoji: '🧑‍🎓', label: '學生' },
-    { key: 'emoji-glasses', emoji: '🤓', label: '書呆子' },
-    { key: 'emoji-pizza', emoji: '🍕', label: '披薩' },
-];
 
 const MOCK_CURRENT_USER = {
     id: 'user-001',
@@ -517,7 +507,7 @@ const ProfileEditPage = () => {
                                                 boxShadow: formData.avatar === option.key && !imagePreview ? `0 0 10px ${COLOR_BRICK_RED}40` : 'none',
                                             }}
                                         >
-                                            {option.emoji}
+                                            <AvatarIcon avatar={option.key} size={28} color={COLOR_OLIVE_GREEN} />
                                         </div>
                                     ))}
                                 </div>

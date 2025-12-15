@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import MemberCard from './MemberCard';
 import { getAllUsers, searchUsers } from '../services/userService';
+import Icon from './Icons';
 
 const MemberDirectory = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -116,7 +117,9 @@ const MemberDirectory = () => {
                     {/* 空狀態 */}
                     {filteredMembers.length === 0 && (
                         <div style={{ textAlign: 'center', padding: '50px', color: '#666' }}>
-                            <div style={{ fontSize: '48px', marginBottom: '15px' }}>👥</div>
+                            <div style={{ marginBottom: '15px', display: 'flex', justifyContent: 'center' }}>
+                                <Icon type="users" size={48} color="#666" />
+                            </div>
                             <p>查無符合條件的會員</p>
                         </div>
                     )}

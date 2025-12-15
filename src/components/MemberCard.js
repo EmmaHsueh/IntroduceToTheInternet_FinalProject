@@ -1,17 +1,7 @@
 // src/components/MemberCard.js
 import React from 'react';
 import { Link } from 'react-router-dom';
-
-// Emoji 頭像對應
-const AVATAR_MAPPING = {
-    'emoji-bear_face': '🐻',
-    'emoji-cat_paw': '🐾',
-    'emoji-student': '🧑‍🎓',
-    'emoji-glasses': '🤓',
-    'emoji-coffee': '☕',
-    'emoji-book': '📚',
-    'emoji-rocket': '🚀',
-};
+import { AvatarIcon } from './Icons';
 
 const MemberCard = ({ member }) => {
     // 樣式模仿會員目錄的網格佈局
@@ -43,17 +33,8 @@ const MemberCard = ({ member }) => {
 
     // 判斷顯示 emoji 或圖片
     const renderAvatar = () => {
-        // 如果 avatar 是 emoji 類型
-        if (AVATAR_MAPPING[member.avatar]) {
-            return (
-                <div style={avatarContainerStyle}>
-                    {AVATAR_MAPPING[member.avatar]}
-                </div>
-            );
-        }
-
-        // 如果是圖片 URL
-        if (member.avatar && member.avatar.startsWith('http')) {
+        // 如果是圖片 URL（以 http 或 data:image 開頭）
+        if (member.avatar && (member.avatar.startsWith('http') || member.avatar.startsWith('data:image'))) {
             return (
                 <img
                     src={member.avatar}
@@ -69,10 +50,10 @@ const MemberCard = ({ member }) => {
             );
         }
 
-        // 預設顯示
+        // 如果是 emoji 類型或預設，使用 AvatarIcon
         return (
             <div style={avatarContainerStyle}>
-                👤
+                <AvatarIcon avatar={member.avatar} size={48} color="#454f3b" />
             </div>
         );
     };

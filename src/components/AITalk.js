@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import Icon from './Icons';
 
 /**
  * AITalk.jsx
@@ -221,7 +222,7 @@ export default function AITalk() {
         onClick={() => setOpen(o => !o)}
         title={open ? '關閉 AI 聊天' : '開啟 AI 聊天'}
       >
-        💬
+        <Icon type="chat" size={24} color="white" />
       </div>
 
       {open && (

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
-import { getUserPosts, getUserComments, deletePost, deleteComment } from '../services/userService'; 
+import { getUserPosts, getUserComments, deletePost, deleteComment } from '../services/userService';
+import { AvatarIcon } from '../components/Icons';
 
 // ------------------------------------
 // 統一配色定義 (淺色活潑大學風格)
@@ -14,19 +15,6 @@ const COLOR_BRICK_RED = '#c9362a';     // 磚紅 - 主要行動按鈕/刪除
 const COLOR_LIGHT_BORDER = '#e0e0e0';  // 極淺邊框
 const COLOR_OFF_WHITE = '#f3f3e6';     // 米黃/淺色 - 主要背景色
 const COLOR_LINK = '#3498db';          // 連結顏色
-
-// ------------------------------------
-// 模擬資料 (初始值)
-// ------------------------------------
-const AVATAR_MAPPING = {
-    'emoji-bear_face': '🐻',
-    'emoji-cat_paw': '🐾',
-    'emoji-student': '🧑‍🎓',
-    'emoji-glasses': '🤓',
-    'emoji-coffee': '☕',
-    'emoji-book': '📚',
-    'emoji-rocket': '🚀',
-};
 
 const MOCK_INITIAL_USER = {
     id: 'user-001',
@@ -363,9 +351,7 @@ const ProfilePage = () => {
                                     }}
                                 />
                             ) : (
-                                <span style={{ fontSize: '3rem' }}>
-                                    {AVATAR_MAPPING[userProfile.avatar] || '👤'}
-                                </span>
+                                <AvatarIcon avatar={userProfile.avatar} size={48} color={COLOR_OLIVE_GREEN} />
                             )}
                         </div>
 

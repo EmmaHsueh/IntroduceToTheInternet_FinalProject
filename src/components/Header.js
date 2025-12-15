@@ -37,9 +37,10 @@ const Header = () => {
     };
 
     const logoImgStyle = {
-        height: '45px', // Logo 高度略減，更精緻
-        marginRight: '10px',
-        opacity: 0.85, // 略微降低透明度，讓 Logo 與黑白灰融合
+        height: '65px', // Logo 高度放大，更醒目
+        marginRight: '12px',
+        opacity: 1, // 完全不透明，讓 Logo 更突出
+        transition: 'transform 0.3s ease',
     };
 
     // 導覽連結基礎樣式
@@ -84,23 +85,25 @@ const Header = () => {
             <div style={navContainerStyle}>
                 
                 {/* 網站標誌 (Logo) 區塊 */}
-                <Link 
-                    to="/" 
-                    style={{ 
-                        textDecoration: 'none', 
+                <Link
+                    to="/"
+                    style={{
+                        textDecoration: 'none',
                         color: COLOR_PRIMARY_TEXT, // Logo 文字使用深灰色
-                        display: 'flex', 
+                        display: 'flex',
                         alignItems: 'center',
                         fontWeight: '300' // Logo 文字使用輕量字體
                     }}
                 >
                     {/* 圖片 Logo */}
-                    <img 
-                        src={SITE_LOGO_PATH} 
-                        alt="師聲論壇 Logo" 
-                        style={logoImgStyle} 
-                    /> 
-                    
+                    <img
+                        src={SITE_LOGO_PATH}
+                        alt="師聲論壇 Logo"
+                        style={logoImgStyle}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.08)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    />
+
                     {/* 文字標題 */}
                     <span style={{ fontSize: '1.6em', fontWeight: 'bold' }}>師聲NTNU Talk</span>
                 </Link>

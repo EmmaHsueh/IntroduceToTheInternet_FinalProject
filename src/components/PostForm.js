@@ -252,10 +252,10 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
                     </div>
 
                     {imageMessage && (
-                        <p style={{ 
-                            color: imageMessage.startsWith('❌') ? COLOR_BRICK_RED : COLOR_OLIVE_GREEN, 
-                            fontSize: 'small', 
-                            marginTop: '15px' 
+                        <p style={{
+                            color: (imageMessage.includes('失敗') || imageMessage.includes('錯誤')) ? COLOR_BRICK_RED : COLOR_OLIVE_GREEN,
+                            fontSize: 'small',
+                            marginTop: '15px'
                         }}>
                             {imageMessage}
                         </p>
@@ -280,9 +280,9 @@ const PostForm = ({ boardName, onSubmit, onCancel }) => {
                     {/* 這裡顯示 globalMessage (審查與發布相關訊息) */}
                     <div style={{ flex: 1, paddingRight: '20px' }}>
                         {globalMessage && (
-                            <p style={{ 
-                                color: globalMessage.startsWith('❌') ? COLOR_BRICK_RED : COLOR_OLIVE_GREEN, 
-                                fontSize: '14px', 
+                            <p style={{
+                                color: (globalMessage.includes('失敗') || globalMessage.includes('錯誤') || globalMessage.includes('敏感詞彙')) ? COLOR_BRICK_RED : COLOR_OLIVE_GREEN,
+                                fontSize: '14px',
                                 margin: 0,
                                 fontWeight: 'bold',
                                 whiteSpace: 'pre-wrap', 

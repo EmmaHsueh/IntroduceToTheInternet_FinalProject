@@ -4,6 +4,7 @@ import Header from '../components/Header';
 import { Link } from 'react-router-dom';
 import { collection, query, orderBy, limit, getDocs, getCountFromServer } from 'firebase/firestore';
 import { db } from '../firebase';
+import Icon from '../components/Icons';
 
 // 顏色常數
 const COLORS = {
@@ -15,9 +16,7 @@ const COLORS = {
   LIGHT_BEIGE: '#faf8f3',
 };
 
-const HeroSection = () => {
-  const [language, setLanguage] = useState('zh'); // 'zh' 或 'en'
-
+const HeroSection = ({ language, setLanguage }) => {
   const content = {
     zh: {
       title: '歡迎來到師聲',
@@ -42,20 +41,20 @@ const HeroSection = () => {
   return (
     <div
       style={{
-        minHeight: '600px',
+        minHeight: '450px',
         background: `linear-gradient(135deg, ${COLORS.DEEP_NAVY} 0%, ${COLORS.OLIVE_GREEN} 100%)`,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         textAlign: 'center',
         color: COLORS.OFF_WHITE,
         position: 'relative',
-        padding: '80px 20px 60px',
+        padding: '30px 20px 40px',
       }}
     >
       {/* 語言切換按鈕 */}
-      <div style={{ position: 'absolute', top: '100px', right: '30px', display: 'flex', gap: '10px' }}>
+      <div style={{ position: 'absolute', top: '25px', right: '30px', display: 'flex', gap: '10px' }}>
         <button
           onClick={() => setLanguage('zh')}
           style={{
@@ -84,6 +83,24 @@ const HeroSection = () => {
         >
           English
         </button>
+      </div>
+
+      {/* Hero Logo - 帶浮動動畫 */}
+      <div
+        style={{
+          marginBottom: '30px',
+          animation: 'logoFloat 3s ease-in-out infinite',
+        }}
+      >
+        <img
+          src="/logo.png"
+          alt="師聲 Logo"
+          style={{
+            width: '180px',
+            height: 'auto',
+            filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.3))',
+          }}
+        />
       </div>
 
       {/* 主標題 */}
@@ -167,7 +184,7 @@ const HeroSection = () => {
       </div>
 
       {/* 裝飾性波浪 SVG */}
-      <svg style={{ position: 'absolute', bottom: 0, left: 0, width: '100%' }} viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg style={{ position: 'absolute', bottom: '-60px', left: 0, width: '100%', pointerEvents: 'none' }} viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,48C1120,43,1280,53,1360,58.7L1440,64L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z" fill={COLORS.OFF_WHITE}/>
       </svg>
     </div>
@@ -175,7 +192,7 @@ const HeroSection = () => {
 };
 
 // 功能特色卡片組件
-const FeatureCard = ({ icon, titleZh, titleEn, descZh, descEn, link, language }) => (
+const FeatureCard = ({ iconType, titleZh, titleEn, descZh, descEn, link, language }) => (
   <Link
     to={link}
     style={{
@@ -200,7 +217,9 @@ const FeatureCard = ({ icon, titleZh, titleEn, descZh, descEn, link, language })
       e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
     }}
   >
-    <div style={{ fontSize: '3rem', marginBottom: '15px' }}>{icon}</div>
+    <div style={{ marginBottom: '15px', display: 'flex', justifyContent: 'center' }}>
+      <Icon type={iconType} size={48} color={COLORS.BRICK_RED} />
+    </div>
     <h3 style={{ fontSize: '1.4rem', marginBottom: '10px', color: COLORS.BRICK_RED }}>
       {language === 'zh' ? titleZh : titleEn}
     </h3>
@@ -210,12 +229,10 @@ const FeatureCard = ({ icon, titleZh, titleEn, descZh, descEn, link, language })
   </Link>
 );
 
-const FeaturesSection = () => {
-  const [language, setLanguage] = useState('zh');
-
+const FeaturesSection = ({ language }) => {
   const features = [
     {
-      icon: '🗣️',
+      iconType: 'comments',
       titleZh: '語言交換',
       titleEn: 'Language Exchange',
       descZh: '與母語者練習中英文，提升語言能力',
@@ -223,7 +240,7 @@ const FeaturesSection = () => {
       link: '/boards/other',
     },
     {
-      icon: '🍜',
+      iconType: 'food',
       titleZh: '美食探索',
       titleEn: 'Food & Culture',
       descZh: '發掘師大周邊隱藏美食與文化景點',
@@ -231,7 +248,7 @@ const FeaturesSection = () => {
       link: '/boards/food',
     },
     {
-      icon: '📅',
+      iconType: 'calendar',
       titleZh: '活動揪團',
       titleEn: 'Events & Meetups',
       descZh: '參加校園活動，認識新朋友',
@@ -239,7 +256,7 @@ const FeaturesSection = () => {
       link: '/boards/events',
     },
     {
-      icon: '💬',
+      iconType: 'chat',
       titleZh: 'AI 智能助手',
       titleEn: 'AI Helper',
       descZh: '24小時智能客服，解答你的疑問',
@@ -247,7 +264,7 @@ const FeaturesSection = () => {
       link: '/boards',
     },
     {
-      icon: '📚',
+      iconType: 'book',
       titleZh: '課程討論',
       titleEn: 'Course Forum',
       descZh: '分享課程心得，找讀書夥伴',
@@ -255,7 +272,7 @@ const FeaturesSection = () => {
       link: '/boards/courses',
     },
     {
-      icon: '🤝',
+      iconType: 'handshake',
       titleZh: '智慧配對',
       titleEn: 'Smart Matching',
       descZh: 'AI 智能配對最適合的語言交換、學習夥伴',
@@ -267,7 +284,7 @@ const FeaturesSection = () => {
   return (
     <section style={{
       padding: '80px 20px',
-      background: COLORS.LIGHT_BEIGE,
+      background: COLORS.OFF_WHITE,
     }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <h2 style={{
@@ -374,8 +391,12 @@ const LiveFeedSection = () => {
                   color: COLORS.BRICK_RED,
                   marginBottom: '10px',
                   fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
                 }}>
-                  📌 {post.boardName || '其他'}
+                  <Icon type="pin" size={14} color={COLORS.BRICK_RED} />
+                  {post.boardName || '其他'}
                 </div>
                 <h3 style={{
                   fontSize: '1.3rem',
@@ -466,10 +487,10 @@ const StatsSection = () => {
   }, []);
 
   const statItems = [
-    { icon: '👥', number: stats.totalMembers, label: '活躍會員', labelEn: 'Active Members' },
-    { icon: '📝', number: stats.totalPosts, label: '社群貼文', labelEn: 'Posts' },
-    { icon: '🌍', number: '20+', label: '國家地區', labelEn: 'Countries' },
-    { icon: '💬', number: '24/7', label: 'AI 客服', labelEn: 'AI Support' },
+    { iconType: 'users', number: stats.totalMembers, label: '活躍會員', labelEn: 'Active Members' },
+    { iconType: 'pencil', number: stats.totalPosts, label: '社群貼文', labelEn: 'Posts' },
+    { iconType: 'worldglobe', number: '20+', label: '國家地區', labelEn: 'Countries' },
+    { iconType: 'chat', number: '24/7', label: 'AI 客服', labelEn: 'AI Support' },
   ];
 
   return (
@@ -495,7 +516,9 @@ const StatsSection = () => {
         }}>
           {statItems.map((item, index) => (
             <div key={index}>
-              <div style={{ fontSize: '3.5rem', marginBottom: '15px' }}>{item.icon}</div>
+              <div style={{ marginBottom: '15px', display: 'flex', justifyContent: 'center' }}>
+                <Icon type={item.iconType} size={56} color={COLORS.OFF_WHITE} />
+              </div>
               <div style={{ fontSize: '3rem', fontWeight: 'bold', marginBottom: '10px' }}>
                 {item.number}
               </div>
@@ -558,18 +581,35 @@ const FinalCTA = () => (
 );
 
 // 主頁面組件
-const HomePage = () => (
-  <>
-    <Header />
-    <main>
-      <HeroSection />
-      <FeaturesSection />
-      <LiveFeedSection />
-      <StatsSection />
-      <FinalCTA />
-    </main>
-    {/* 可選：加入 Footer */}
-  </>
-);
+const HomePage = () => {
+  // 統一管理語言狀態，預設為英文
+  const [language, setLanguage] = useState('en');
+
+  return (
+    <>
+      <Header />
+      <main>
+        <HeroSection language={language} setLanguage={setLanguage} />
+        <FeaturesSection language={language} />
+        <LiveFeedSection />
+        <StatsSection />
+        <FinalCTA />
+      </main>
+      {/* 可選：加入 Footer */}
+
+      {/* CSS Keyframes for Logo Animation */}
+      <style>{`
+        @keyframes logoFloat {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-15px);
+          }
+        }
+      `}</style>
+    </>
+  );
+};
 
 export default HomePage;

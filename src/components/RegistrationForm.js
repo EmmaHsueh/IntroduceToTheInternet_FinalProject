@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { AVATAR_OPTIONS, AvatarIcon } from '../components/Icons';
 
 // ------------------------------------
 // 統一配色定義 (淺色活潑大學風格)
@@ -11,18 +12,6 @@ const COLOR_MORANDI_BROWN = '#a38c6b'; // 輸入框邊框/次要按鈕/連結
 const COLOR_BRICK_RED = '#c9362a';     // 主要提交按鈕 (CTA)/必填符號
 const COLOR_LIGHT_BORDER = '#e0e0e0';  // 極淺邊框
 const COLOR_OFF_WHITE = '#f3f3e6';     // 米黃色 (用於預覽背景)
-
-// ------------------------------------
-// 新增：可愛頭像選項 (使用 Emoji 作為示意圖)
-// ------------------------------------
-const AVATAR_OPTIONS = [
-    { name: '貓咪', icon: '🐾', value: 'emoji-cat_paw' },
-    { name: '熊熊', icon: '🐻', value: 'emoji-bear_face' },
-    { name: '兔子', icon: '🐰', value: 'emoji-rabbit_face' },
-    { name: '狐狸', icon: '🦊', value: 'emoji-fox_face' },
-    { name: '貓頭鷹', icon: '🦉', value: 'emoji-owl' },
-    { name: '學士帽', icon: '🎓', value: 'emoji-graduation' },
-];
 
 const RegistrationForm = ({ switchToLogin }) => {
     const [formData, setFormData] = useState({
@@ -130,27 +119,21 @@ const RegistrationForm = ({ switchToLogin }) => {
     // ------------------------------------
     const renderSelectedAvatar = () => {
         const selectedValue = formData.avatar_url;
-        
+
         // 1. 自訂圖片預覽 (使用本地 URL)
         if (customAvatarUrl && selectedValue === customAvatarUrl) {
             return (
-                <img 
-                    src={customAvatarUrl} 
-                    alt="Custom Avatar Preview" 
+                <img
+                    src={customAvatarUrl}
+                    alt="Custom Avatar Preview"
                     // 確保圖片能填滿圓形容器
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
             );
         }
-        
-        // 2. 預設 Emoji 頭像
-        const selectedAvatar = AVATAR_OPTIONS.find(opt => opt.value === selectedValue);
-        if (selectedAvatar) {
-            return selectedAvatar.icon;
-        }
 
-        // 3. 預設/錯誤狀態
-        return '❓';
+        // 2. 預設 Emoji 頭像 - 使用 AvatarIcon 组件
+        return <AvatarIcon avatar={selectedValue} size={40} color={COLOR_OLIVE_GREEN} />;
     };
 
     // 統一輸入框樣式
@@ -320,13 +303,13 @@ const RegistrationForm = ({ switchToLogin }) => {
                     <div style={{ display: 'flex', gap: '15px', overflowX: 'auto', paddingBottom: '10px' }}>
                         {AVATAR_OPTIONS.map((avatar) => (
                             <div
-                                key={avatar.value}
+                                key={avatar.key}
                                 // 判斷是否為當前選中的 Emoji
-                                style={avatarOptionStyle(formData.avatar_url === avatar.value)}
-                                onClick={() => handleAvatarSelect(avatar.value)}
-                                title={avatar.name}
+                                style={avatarOptionStyle(formData.avatar_url === avatar.key)}
+                                onClick={() => handleAvatarSelect(avatar.key)}
+                                title={avatar.label}
                             >
-                                {avatar.icon}
+                                <AvatarIcon avatar={avatar.key} size={28} color={COLOR_OLIVE_GREEN} />
                             </div>
                         ))}
                     </div>

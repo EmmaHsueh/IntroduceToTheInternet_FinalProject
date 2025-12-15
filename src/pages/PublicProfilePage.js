@@ -5,6 +5,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import { getUserById, getUserPosts, getUserComments } from '../services/userService';
+import { AvatarIcon } from '../components/Icons';
+import Icon from '../components/Icons';
 
 // 統一配色
 const COLOR_DEEP_NAVY = '#1e2a38';
@@ -13,16 +15,6 @@ const COLOR_MORANDI_BROWN = '#a38c6b';
 const COLOR_BRICK_RED = '#c9362a';
 const COLOR_LIGHT_BORDER = '#e0e0e0';
 const COLOR_OFF_WHITE = '#f3f3e6';
-
-const AVATAR_MAPPING = {
-    'emoji-bear_face': '🐻',
-    'emoji-cat_paw': '🐾',
-    'emoji-student': '🧑‍🎓',
-    'emoji-glasses': '🤓',
-    'emoji-coffee': '☕',
-    'emoji-book': '📚',
-    'emoji-rocket': '🚀',
-};
 
 const PublicProfilePage = () => {
     const { userId } = useParams();
@@ -98,7 +90,9 @@ const PublicProfilePage = () => {
             <>
                 <Header />
                 <div style={{ textAlign: 'center', padding: '50px' }}>
-                    <h2 style={{ color: COLOR_BRICK_RED }}>❌ {error}</h2>
+                    <h2 style={{ color: COLOR_BRICK_RED }}>
+                        <Icon type="error" size={24} color={COLOR_BRICK_RED} /> {error}
+                    </h2>
                     <button
                         onClick={() => navigate('/members')}
                         style={{
@@ -174,7 +168,7 @@ const PublicProfilePage = () => {
                                     }}
                                 />
                             ) : (
-                                AVATAR_MAPPING[user.avatar] || '👤'
+                                <AvatarIcon avatar={user.avatar} size={48} color={COLOR_OLIVE_GREEN} />
                             )}
                         </div>
 
