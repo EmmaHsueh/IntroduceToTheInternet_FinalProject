@@ -31,88 +31,178 @@ app.use(express.json());
 const upload = multer({ storage: multer.memoryStorage() });
 
 // ----------------------------------------
-// 1. RAG 知識庫定義 (新增)
+// 1. RAG 向量知識庫系統 (新增)
 // ----------------------------------------
-const KNOWLEDGE_BASE = [
-  // 🎓 選課規範與流程
-  {
-    keywords: ['選課', '階段', '初選', '加退選', '授權碼'],
-    fact: "師大選課主要分「初選」和「加退選」兩階段。初選多採志願或登記後分發，加退選則是即時選課。若因額滿使用**授權碼**加選，該課程原則上不得退選，僅能申請期中停修。",
-    tags: ['Academic', 'BigStupidBird']
-  },
-  {
-    keywords: ['衝堂', '學分上限', '停修', '學則'],
-    fact: "選課最重要的是**嚴禁衝堂**（上課時間衝突），衝堂科目將以零分計算。學生每學期有學分上、下限規定，若要超修需依學則規定另行申請。另外，每學期通常可申請**期中停修**一門課（限3學分）。",
-    tags: ['Academic', 'BigStupidBird']
-  },
-  {
-    keywords: ['通識', '體育', '分發', '校際', '確認選課'],
-    fact: "**通識**和**體育**課程多採**志願分發制**，選課時間早晚不影響分發結果。所有學生都應在選課結束前自行上網查詢並**確認選課結果**，若有疑義須立即向課務組反應。",
-    tags: ['Academic', 'BigStupidBird', 'GentleSeniorSister']
-  },
-  // 🏆 社團與課外活動概況
-  {
-    keywords: ['社團', '課外活動', '玩中學', '軟實力', '競爭力'],
-    fact: "課外活動是大學學習生活中非常重要的一環，臺師大秉持『玩中學、學中玩』的精神，鼓勵同學在社團中探索自我、開拓人際關係，並能藉此『玩出人才軟實力，提升就業競爭力』。",
-    tags: ['HumorousSeniorBrother', 'GentleSeniorSister', 'Lifestyle']
-  },
-  {
-    keywords: ['社團分類', '七大類', '學術', '藝文', '康樂', '體能', '服務', '聯誼'],
-    fact: "師大社團種類繁多，共可分為七大類：**學術性**、**藝文性**、**康樂性**、**體能性**、**服務性**、**聯誼性**社團，以及**綜合性社團暨學生會**，種類多元，活力充沛。",
-    tags: ['HumorousSeniorBrother', 'GentleSeniorSister']
-  },
-  {
-    keywords: ['社團活動', '迎新', '社團評鑑', '社團人學程', '領導力'],
-    fact: "課外活動指導組會辦理多項大型活動，例如：**社團迎新系列活動**、**黃金雨季社團評鑑**，更首創了『**社團人專業領導培力學分學程**』，讓同學透過實務結合學習組織經營管理。",
-    tags: ['HumorousSeniorBrother', 'Academic']
-  },
-  // 🍔 師大周邊美食推薦
-  {
-    keywords: ['師園', '鹽酥雞', '鹹酥雞', '必修學分', '宵夜'],
-    fact: "師大商圈最具代表性的宵夜是**師園鹽酥雞**，這家老店被許多師大學生戲稱為「必修學分」。它不僅提供外帶，也有內用座位。",
-    tags: ['HumorousSeniorBrother', 'Lifestyle']
-  },
-  {
-    keywords: ['燈籠滷味', '可麗餅', '阿諾', '甜點', '創始店'],
-    fact: "師大美食的兩大經典地標：**燈籠滷味創始老店**和**阿諾可麗餅**總店。阿諾可麗餅口味豐富，甜鹹都有，是吃完正餐後的最佳甜點選擇。",
-    tags: ['GentleSeniorSister', 'Lifestyle']
-  },
-  {
-    keywords: ['蘿蔔絲餅', '菠蘿油', '好好味', '溫州街', '平價小吃'],
-    fact: "推薦兩大平價點心：**溫州街蘿蔔絲餅達人**和**好好味冰火菠蘿油**。蘿蔔絲餅酥脆內餡飽滿；冰火菠蘿油則是下午茶或飯後甜點的最佳港式選擇。",
-    tags: ['GentleSeniorSister', 'Lifestyle']
-  },
-];
+const fs = require('fs');
+const path = require('path');
+
+// 載入知識庫文件
+let KNOWLEDGE_BASE = [];
+const KNOWLEDGE_FILE = path.join(__dirname, 'knowledge_base.txt');
 
 /**
- * RAG 檢索函式：根據訊息內容和角色標籤進行檢索
- * @param {string} message 使用者訊息
- * @param {string} role 角色ID ('big', 'gentle', 'funny')
- * @returns {string[]} 檢索到的相關事實列表
+ * 載入並解析知識庫文件
  */
-const retrieveFacts = (message, role) => {
-    // 1. 根據角色 ID 決定對應的 tag
-    let roleTag = '';
-    if (role === 'gentle') roleTag = 'GentleSeniorSister';
-    else if (role === 'funny') roleTag = 'HumorousSeniorBrother';
-    else roleTag = 'BigStupidBird';
+function loadKnowledgeBase() {
+    try {
+        if (!fs.existsSync(KNOWLEDGE_FILE)) {
+            console.warn('⚠️ 知識庫文件不存在，使用空知識庫');
+            return;
+        }
 
-    const lowerCaseMessage = message.toLowerCase();
-    const relevantFacts = [];
+        const content = fs.readFileSync(KNOWLEDGE_FILE, 'utf-8');
+        const lines = content.split('\n');
 
-    // 2. 遍歷知識庫，進行關鍵詞匹配和角色標籤過濾
-    for (const item of KNOWLEDGE_BASE) {
-        const keywordMatch = item.keywords.some(keyword => lowerCaseMessage.includes(keyword));
-        const roleMatch = item.tags.includes(roleTag); // 確保檢索到的事實與當前角色相關
+        KNOWLEDGE_BASE = [];
 
-        if (keywordMatch && roleMatch) {
-            relevantFacts.push(item.fact);
+        for (const line of lines) {
+            // 跳過註釋和空行
+            if (line.trim().startsWith('#') || line.trim() === '') continue;
+
+            // 解析格式: [分類] 問題 | 答案
+            const match = line.match(/\[(.+?)\]\s*(.+?)\s*\|\s*(.+)/);
+            if (match) {
+                const [, category, question, answer] = match;
+                KNOWLEDGE_BASE.push({
+                    category: category.trim(),
+                    question: question.trim(),
+                    answer: answer.trim(),
+                    text: `${question.trim()} ${answer.trim()}`, // 用於向量化的完整文本
+                    vector: null // 將在初始化時計算
+                });
+            }
+        }
+
+        console.log(`✅ 成功載入 ${KNOWLEDGE_BASE.length} 條知識庫條目`);
+
+        // 預計算所有知識庫向量
+        for (const item of KNOWLEDGE_BASE) {
+            item.vector = textToVector(item.text);
+        }
+
+    } catch (error) {
+        console.error('❌ 載入知識庫失敗:', error);
+    }
+}
+
+/**
+ * 簡易中文分詞（基於字符）
+ */
+function simpleTokenize(text) {
+    // 移除標點符號，保留中文、英文、數字
+    const cleaned = text.replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s]/g, ' ');
+    // 分割成詞（中文按字，英文按詞）
+    const tokens = [];
+
+    // 處理中文（每個字作為一個 token）
+    for (let i = 0; i < cleaned.length; i++) {
+        const char = cleaned[i];
+        if (/[\u4e00-\u9fa5]/.test(char)) {
+            tokens.push(char);
         }
     }
 
-    // 3. 避免重複，並限制數量
-    return Array.from(new Set(relevantFacts)).slice(0, 3);
+    // 處理英文和數字（按空格分詞）
+    const words = cleaned.match(/[a-zA-Z0-9]+/g) || [];
+    tokens.push(...words.map(w => w.toLowerCase()));
+
+    return tokens;
+}
+
+/**
+ * 計算詞頻（TF）
+ */
+function computeTF(tokens) {
+    const tf = {};
+    const totalTokens = tokens.length;
+
+    for (const token of tokens) {
+        tf[token] = (tf[token] || 0) + 1;
+    }
+
+    // 標準化
+    for (const token in tf) {
+        tf[token] = tf[token] / totalTokens;
+    }
+
+    return tf;
+}
+
+/**
+ * 文本轉向量（簡化版 TF-IDF）
+ */
+function textToVector(text) {
+    const tokens = simpleTokenize(text);
+    const tf = computeTF(tokens);
+    return tf;
+}
+
+/**
+ * 計算餘弦相似度
+ */
+function cosineSimilarity(vec1, vec2) {
+    const allKeys = new Set([...Object.keys(vec1), ...Object.keys(vec2)]);
+
+    let dotProduct = 0;
+    let mag1 = 0;
+    let mag2 = 0;
+
+    for (const key of allKeys) {
+        const v1 = vec1[key] || 0;
+        const v2 = vec2[key] || 0;
+
+        dotProduct += v1 * v2;
+        mag1 += v1 * v1;
+        mag2 += v2 * v2;
+    }
+
+    if (mag1 === 0 || mag2 === 0) return 0;
+
+    return dotProduct / (Math.sqrt(mag1) * Math.sqrt(mag2));
+}
+
+/**
+ * RAG 向量檢索函式：使用向量相似度檢索最相關的知識
+ * @param {string} message 使用者訊息
+ * @param {string} role 角色ID (可選，用於過濾分類)
+ * @param {number} topK 返回前 K 條最相關的結果
+ * @returns {Array} 檢索到的相關知識列表
+ */
+const retrieveFacts = (message, role = null, topK = 3) => {
+    if (KNOWLEDGE_BASE.length === 0) {
+        console.warn('⚠️ 知識庫為空');
+        return [];
+    }
+
+    // 1. 將使用者問題轉換為向量
+    const queryVector = textToVector(message);
+
+    // 2. 計算與每條知識的相似度
+    const results = KNOWLEDGE_BASE.map(item => ({
+        ...item,
+        similarity: cosineSimilarity(queryVector, item.vector)
+    }));
+
+    // 3. 按相似度排序
+    results.sort((a, b) => b.similarity - a.similarity);
+
+    // 4. 過濾相似度過低的結果（閾值 0.1）
+    const filtered = results.filter(r => r.similarity > 0.1);
+
+    // 5. 取前 topK 條
+    const topResults = filtered.slice(0, topK);
+
+    console.log(`🔍 檢索到 ${topResults.length} 條相關知識:`);
+    topResults.forEach((r, i) => {
+        console.log(`  ${i + 1}. [${r.category}] 相似度: ${r.similarity.toFixed(3)} - ${r.question.substring(0, 20)}...`);
+    });
+
+    // 6. 返回答案文本
+    return topResults.map(r => r.answer);
 };
+
+// 啟動時載入知識庫
+loadKnowledgeBase();
 
 
 // ----------------------------------------
@@ -341,6 +431,52 @@ app.post("/api/translate", async (req, res) => {
     console.error("翻譯失敗:", err);
     res.status(500).json({ error: "翻譯失敗，請稍後再試。" });
   }
+});
+
+// ----------------------------------------
+// 4. RAG 知識庫測試端點
+// ----------------------------------------
+app.post("/api/rag-test", async (req, res) => {
+  try {
+    const { question, topK = 3 } = req.body;
+
+    if (!question) {
+      return res.status(400).json({ error: "問題不能為空" });
+    }
+
+    console.log(`🔍 RAG 測試查詢: "${question}"`);
+
+    // 調用 RAG 檢索
+    const facts = retrieveFacts(question, null, topK);
+
+    // 返回結果
+    res.json({
+      success: true,
+      question: question,
+      topK: topK,
+      results: facts,
+      count: facts.length
+    });
+
+  } catch (error) {
+    console.error("RAG 檢索失敗:", error);
+    res.status(500).json({
+      success: false,
+      error: "知識庫檢索失敗",
+      message: error.message
+    });
+  }
+});
+
+// 健康檢查端點
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "healthy",
+    knowledgeBase: {
+      loaded: KNOWLEDGE_BASE.length > 0,
+      count: KNOWLEDGE_BASE.length
+    }
+  });
 });
 
 
