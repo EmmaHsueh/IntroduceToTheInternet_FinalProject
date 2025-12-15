@@ -89,9 +89,8 @@ function loadKnowledgeBase() {
  * 簡易中文分詞（基於字符）
  */
 function simpleTokenize(text) {
-    // 移除標點符號，保留中文、英文、數字
+    // 移除標點符號
     const cleaned = text.replace(/[^\u4e00-\u9fa5a-zA-Z0-9\s]/g, ' ');
-    // 分割成詞（中文按字，英文按詞）
     const tokens = [];
 
     // 處理中文（每個字作為一個 token）

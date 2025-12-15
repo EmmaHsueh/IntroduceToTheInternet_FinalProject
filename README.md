@@ -633,3 +633,92 @@ Replace src/firebase.js with your Firebase config to enable Auth/Firestore/Stora
   - 所有組件使用 useLanguage() hook 獲取當前語言
   - 使用三元運算符 language === 'zh' ? '中文' : 'English' 進行條件渲染
   - 保持所有原有功能和代碼結構不變
+
+
+  RAG 向量知識庫系統實現完成
+
+  ✅ 已完成的文件
+
+  1. backend/knowledge_base.txt - 靜態知識庫文件
+    - 包含 30+ 條知識條目
+    - 涵蓋選課、美食、社團、宿舍、校園、國際交流、就業等主題
+    - 格式：[分類] 問題 | 答案
+  2. backend/server.js (已修改) - 主服務器
+    - 實現文本向量化（TF-IDF）
+    - 實現餘弦相似度計算
+    - 實現 RAG 檢索函數 retrieveFacts()
+    - 新增測試端點 /api/rag-test
+    - 新增健康檢查端點 /api/health
+    - 自動載入知識庫
+  3. backend/test_rag.js - 測試腳本
+    - 完整的測試套件
+    - 支援單個問題測試
+    - 健康檢查功能
+  4. backend/RAG_README.md - 詳細技術文檔
+    - 系統架構說明
+    - API 文檔
+    - 向量化原理解釋
+    - 調優建議
+  5. backend/QUICK_START.md - 快速開始指南
+    - 一步步使用說明
+    - 範例代碼
+    - 常見問題解答
+
+  🔄 工作流程（如您要求）
+
+  使用者問題
+      │
+      ▼
+  [1] textToVector() 轉成向量 (queryVector)
+      │
+      ▼
+  [2] 與知識庫中每條知識計算餘弦相似度
+      │
+      ▼
+  [3] 按相似度排序
+      │
+      ▼
+  [4] 過濾低分結果（閾值 > 0.1）
+      │
+      ▼
+  [5] 取前 topK 條（預設 3 條）
+      │
+      ▼
+  [6] 返回最相關的答案給 LLM
+
+  🚀 立即測試
+
+  # 1. 啟動服務器
+  cd backend
+  node server.js
+
+  # 2. 在另一個終端執行測試
+  node test_rag.js
+
+  # 或測試單個問題
+  node test_rag.js 選課有哪些階段？
+
+  📝 使用範例
+
+  // 在你的 AI 對話中使用
+  const facts = retrieveFacts("選課有哪些規定？", null, 3);
+
+  // facts 會包含最相關的 3 條答案
+  // 將這些答案整合到 LLM 的提示詞中即可
+
+  🎯 特點
+
+  - ✅ 無需外部 API - 使用內建的 TF-IDF 向量化
+  - ✅ 支援中文 - 針對中文優化的分詞處理
+  - ✅ 自動載入 - 服務器啟動時自動載入知識庫
+  - ✅ 易於擴展 - 簡單編輯 txt 文件即可添加知識
+  - ✅ 實時檢索 - 毫秒級響應速度
+  - ✅ 詳細日誌 - Console 顯示檢索結果和相似度分數
+
+  📊 檢索效果範例
+
+  當用戶問「選課有什麼規定？」時：
+  🔍 檢索到 3 條相關知識:
+    1. [Academic] 相似度: 0.456 - 選課有哪些階段？
+    2. [Academic] 相似度: 0.342 - 什麼是衝堂？
+    3. [Academic] 相似度: 0.287 - 通識課程如何選課？
