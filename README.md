@@ -617,3 +617,19 @@ Replace src/firebase.js with your Firebase config to enable Auth/Firestore/Stora
 
   ---
   總結：Express 就是一個幫您輕鬆建立後端 API 伺服器的工具，讓前端可以安全地使用各種第三方服務！ 🎉
+
+ 全局語言管理系統
+
+  - ✅ 創建 /src/contexts/LanguageContext.js
+    - 提供全局語言狀態管理
+    - 支援 localStorage 持久化存儲
+    - 預設語言為英文 ('en')
+    - 提供 useLanguage() hook 給所有頁面使用
+  - ✅ 在 App.js 中整合 LanguageProvider
+    - 包裹整個應用，讓所有頁面都能訪問語言設定
+
+  使用 React Context API 進行全局狀態管理
+  - localStorage 實現語言偏好持久化
+  - 所有組件使用 useLanguage() hook 獲取當前語言
+  - 使用三元運算符 language === 'zh' ? '中文' : 'English' 進行條件渲染
+  - 保持所有原有功能和代碼結構不變

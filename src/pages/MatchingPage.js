@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { getAllUsers } from '../services/userService';
 import {
   matchLanguageExchange,
@@ -28,6 +29,7 @@ const COLORS = {
 // ==========================================
 const MatchingPage = () => {
   const { currentUser, userProfile } = useAuth();
+  const { language } = useLanguage();
   const [selectedMatchType, setSelectedMatchType] = useState(null); // 'language' / 'study' / 'roommate' / 'cultural'
   const [matchResults, setMatchResults] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
@@ -49,7 +51,7 @@ const MatchingPage = () => {
   // 執行配對
   const handleMatch = (matchType) => {
     if (!currentUser) {
-      alert('請先登入才能使用配對功能');
+      alert(language === 'zh' ? '請先登入才能使用配對功能' : 'Please log in to use the matching feature');
       return;
     }
 
@@ -121,42 +123,50 @@ const MatchingPage = () => {
 // ==========================================
 // 🎨 Hero Section
 // ==========================================
-const HeroSection = () => (
-  <section style={{
-    background: `linear-gradient(135deg, ${COLORS.DEEP_NAVY} 0%, ${COLORS.OLIVE_GREEN} 100%)`,
-    color: COLORS.OFF_WHITE,
-    padding: '80px 20px 60px',
-    textAlign: 'center',
-  }}>
-    <h1 style={{
-      fontSize: 'clamp(2rem, 4vw, 3rem)',
-      marginBottom: '15px',
-      fontWeight: '800',
+const HeroSection = () => {
+  const { language } = useLanguage();
+
+  return (
+    <section style={{
+      background: `linear-gradient(135deg, ${COLORS.DEEP_NAVY} 0%, ${COLORS.OLIVE_GREEN} 100%)`,
+      color: COLORS.OFF_WHITE,
+      padding: '80px 20px 60px',
+      textAlign: 'center',
     }}>
-      智慧配對系統 
-    </h1>
-    <p style={{
-      fontSize: 'clamp(1rem, 2vw, 1.3rem)',
-      opacity: 0.9,
-      maxWidth: '700px',
-      margin: '0 auto',
-    }}>
-      Smart Matching System
-    </p>
-    <p style={{
-      fontSize: 'clamp(0.9rem, 1.5vw, 1.1rem)',
-      marginTop: '20px',
-      opacity: 0.85,
-    }}>
-      用 AI 演算法幫你找到最適合的語言交換夥伴、學習小組或室友！
-    </p>
-  </section>
-);
+      <h1 style={{
+        fontSize: 'clamp(2rem, 4vw, 3rem)',
+        marginBottom: '15px',
+        fontWeight: '800',
+      }}>
+        {language === 'zh' ? '智慧配對系統' : 'Smart Matching System'}
+      </h1>
+      <p style={{
+        fontSize: 'clamp(1rem, 2vw, 1.3rem)',
+        opacity: 0.9,
+        maxWidth: '700px',
+        margin: '0 auto',
+      }}>
+        {language === 'zh' ? 'Smart Matching System' : '智慧配對系統'}
+      </p>
+      <p style={{
+        fontSize: 'clamp(0.9rem, 1.5vw, 1.1rem)',
+        marginTop: '20px',
+        opacity: 0.85,
+      }}>
+        {language === 'zh'
+          ? '用 AI 演算法幫你找到最適合的語言交換夥伴、學習小組或室友！'
+          : 'Use AI algorithms to find the perfect language exchange partner, study group, or roommate!'}
+      </p>
+    </section>
+  );
+};
 
 // ==========================================
 // 🎯 配對類型選擇卡片
 // ==========================================
 const MatchTypeSelection = ({ onSelectMatch }) => {
+  const { language } = useLanguage();
+
   const matchTypes = [
     {
       id: 'language',
@@ -165,7 +175,8 @@ const MatchTypeSelection = ({ onSelectMatch }) => {
       titleEn: 'Language Exchange',
       descZh: '找到母語者練習中英文，互相學習、互相進步',
       descEn: 'Find native speakers to practice languages',
-      features: ['母語互補配對', '語言程度匹配', '共同興趣篩選', '時間彈性安排'],
+      featuresZh: ['母語互補配對', '語言程度匹配', '共同興趣篩選', '時間彈性安排'],
+      featuresEn: ['Native language pairing', 'Language level matching', 'Common interests screening', 'Flexible scheduling'],
       color: '#FF6B6B',
     },
     {
@@ -175,7 +186,8 @@ const MatchTypeSelection = ({ onSelectMatch }) => {
       titleEn: 'Study Buddy Matching',
       descZh: '根據科系、課程、學習習慣找到最佳讀書夥伴',
       descEn: 'Find study partners by major, courses & habits',
-      features: ['相同科系優先', '共同課程媒合', '學習習慣匹配', '專題合作夥伴'],
+      featuresZh: ['相同科系優先', '共同課程媒合', '學習習慣匹配', '專題合作夥伴'],
+      featuresEn: ['Same major priority', 'Common courses matching', 'Study habits compatibility', 'Project collaboration'],
       color: '#4ECDC4',
     },
     {
@@ -185,7 +197,8 @@ const MatchTypeSelection = ({ onSelectMatch }) => {
       titleEn: 'Roommate Finder',
       descZh: '根據生活習慣、預算、作息找到理想室友',
       descEn: 'Match with ideal roommates by lifestyle & budget',
-      features: ['租金預算匹配', '作息習慣相符', '生活方式契合', '性別偏好設定'],
+      featuresZh: ['租金預算匹配', '作息習慣相符', '生活方式契合', '性別偏好設定'],
+      featuresEn: ['Budget matching', 'Schedule compatibility', 'Lifestyle alignment', 'Gender preference'],
       color: '#95E1D3',
     },
     {
@@ -195,7 +208,8 @@ const MatchTypeSelection = ({ onSelectMatch }) => {
       titleEn: 'Cultural Exchange',
       descZh: '國際生與本地生互相交流，體驗不同文化',
       descEn: 'International & local students cultural exchange',
-      features: ['本地生導覽', '文化活動揪團', '美食探索夥伴', '節慶體驗分享'],
+      featuresZh: ['本地生導覽', '文化活動揪團', '美食探索夥伴', '節慶體驗分享'],
+      featuresEn: ['Local tour guide', 'Cultural activities', 'Food exploration', 'Festival experiences'],
       color: '#F38181',
     },
   ];
@@ -208,7 +222,7 @@ const MatchTypeSelection = ({ onSelectMatch }) => {
         color: COLORS.DEEP_NAVY,
         marginBottom: '50px',
       }}>
-        選擇配對類型 Choose Your Match Type
+        {language === 'zh' ? '選擇配對類型' : 'Choose Your Match Type'}
       </h2>
 
       <div style={{
@@ -258,7 +272,7 @@ const MatchTypeSelection = ({ onSelectMatch }) => {
               textAlign: 'center',
               fontWeight: 'bold',
             }}>
-              {type.titleZh}
+              {language === 'zh' ? type.titleZh : type.titleEn}
             </h3>
             <p style={{
               fontSize: '0.95rem',
@@ -266,7 +280,7 @@ const MatchTypeSelection = ({ onSelectMatch }) => {
               textAlign: 'center',
               marginBottom: '20px',
             }}>
-              {type.titleEn}
+              {language === 'zh' ? type.titleEn : type.titleZh}
             </p>
 
             {/* Description */}
@@ -276,7 +290,7 @@ const MatchTypeSelection = ({ onSelectMatch }) => {
               lineHeight: '1.6',
               marginBottom: '20px',
             }}>
-              {type.descZh}
+              {language === 'zh' ? type.descZh : type.descEn}
             </p>
 
             {/* Features */}
@@ -285,7 +299,7 @@ const MatchTypeSelection = ({ onSelectMatch }) => {
               padding: 0,
               margin: 0,
             }}>
-              {type.features.map((feature, index) => (
+              {(language === 'zh' ? type.featuresZh : type.featuresEn).map((feature, index) => (
                 <li key={index} style={{
                   fontSize: '0.9rem',
                   color: COLORS.DEEP_NAVY,
@@ -322,7 +336,7 @@ const MatchTypeSelection = ({ onSelectMatch }) => {
             onMouseEnter={(e) => e.target.style.opacity = '0.9'}
             onMouseLeave={(e) => e.target.style.opacity = '1'}
             >
-              開始配對 Start Matching
+              {language === 'zh' ? '開始配對' : 'Start Matching'}
             </button>
           </div>
         ))}
@@ -335,11 +349,21 @@ const MatchTypeSelection = ({ onSelectMatch }) => {
 // 📊 配對結果顯示
 // ==========================================
 const MatchResults = ({ matchType, results, loading, onBack, currentUser }) => {
+  const { language } = useLanguage();
+
   const typeNames = {
-    language: '語言交換',
-    study: '學習夥伴',
-    roommate: '室友',
-    cultural: '文化體驗',
+    zh: {
+      language: '語言交換',
+      study: '學習夥伴',
+      roommate: '室友',
+      cultural: '文化體驗',
+    },
+    en: {
+      language: 'Language Exchange',
+      study: 'Study Buddy',
+      roommate: 'Roommate',
+      cultural: 'Cultural Exchange',
+    }
   };
 
   return (
@@ -358,7 +382,7 @@ const MatchResults = ({ matchType, results, loading, onBack, currentUser }) => {
           fontSize: '1rem',
         }}
       >
-        ← 返回選擇
+        {language === 'zh' ? '← 返回選擇' : '← Back to Selection'}
       </button>
 
       <h2 style={{
@@ -366,7 +390,9 @@ const MatchResults = ({ matchType, results, loading, onBack, currentUser }) => {
         color: COLORS.DEEP_NAVY,
         marginBottom: '15px',
       }}>
-        {typeNames[matchType]}配對結果
+        {language === 'zh'
+          ? `${typeNames.zh[matchType]}配對結果`
+          : `${typeNames.en[matchType]} Results`}
       </h2>
 
       {loading ? (
@@ -374,7 +400,9 @@ const MatchResults = ({ matchType, results, loading, onBack, currentUser }) => {
           <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center' }}>
             <Icon type="search" size={48} color={COLORS.OLIVE_GREEN} />
           </div>
-          <p style={{ fontSize: '1.2rem' }}>正在為你尋找最佳配對...</p>
+          <p style={{ fontSize: '1.2rem' }}>
+            {language === 'zh' ? '正在為你尋找最佳配對...' : 'Finding the best matches for you...'}
+          </p>
         </div>
       ) : results.length === 0 ? (
         <div style={{
@@ -386,9 +414,13 @@ const MatchResults = ({ matchType, results, loading, onBack, currentUser }) => {
           <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center' }}>
             <Icon type="sad" size={64} color={COLORS.MORANDI_BROWN} />
           </div>
-          <h3 style={{ color: COLORS.DEEP_NAVY, marginBottom: '15px' }}>暫時找不到合適的配對</h3>
+          <h3 style={{ color: COLORS.DEEP_NAVY, marginBottom: '15px' }}>
+            {language === 'zh' ? '暫時找不到合適的配對' : 'No suitable matches found'}
+          </h3>
           <p style={{ color: COLORS.OLIVE_GREEN, marginBottom: '20px' }}>
-            建議完善你的個人檔案資料，或稍後再試！
+            {language === 'zh'
+              ? '建議完善你的個人檔案資料，或稍後再試！'
+              : 'Please complete your profile or try again later!'}
           </p>
           <Link
             to="/profile/edit"
@@ -402,13 +434,15 @@ const MatchResults = ({ matchType, results, loading, onBack, currentUser }) => {
               fontWeight: 'bold',
             }}
           >
-            前往完善資料 →
+            {language === 'zh' ? '前往完善資料 →' : 'Complete Profile →'}
           </Link>
         </div>
       ) : (
         <>
           <p style={{ color: COLORS.OLIVE_GREEN, marginBottom: '30px', fontSize: '1.1rem' }}>
-            為你找到 <strong>{results.length}</strong> 位配對夥伴 (依配對度排序)
+            {language === 'zh'
+              ? `為你找到 ${results.length} 位配對夥伴 (依配對度排序)`
+              : `Found ${results.length} matching partner${results.length > 1 ? 's' : ''} (sorted by compatibility)`}
           </p>
 
           <div style={{
@@ -430,6 +464,7 @@ const MatchResults = ({ matchType, results, loading, onBack, currentUser }) => {
 // 💳 配對卡片
 // ==========================================
 const MatchCard = ({ user, matchType, currentUser }) => {
+  const { language } = useLanguage();
   const matchScore = user.matchScore || 0;
   const matchReasons = user.matchReasons || [];
 
@@ -453,7 +488,7 @@ const MatchCard = ({ user, matchType, currentUser }) => {
           marginBottom: '8px',
         }}>
           <span style={{ fontSize: '0.9rem', color: COLORS.OLIVE_GREEN, fontWeight: 'bold' }}>
-            配對度
+            {language === 'zh' ? '配對度' : 'Match Score'}
           </span>
           <span style={{
             fontSize: '1.5rem',
@@ -500,10 +535,10 @@ const MatchCard = ({ user, matchType, currentUser }) => {
             color: COLORS.DEEP_NAVY,
             marginBottom: '5px',
           }}>
-            {user.nickname || user.email?.split('@')[0] || '匿名用戶'}
+            {user.nickname || user.email?.split('@')[0] || (language === 'zh' ? '匿名用戶' : 'Anonymous User')}
           </h4>
           <p style={{ fontSize: '0.85rem', color: COLORS.OLIVE_GREEN }}>
-            {user.department || '未設定科系'} • {user.gender || '保密'}
+            {user.department || (language === 'zh' ? '未設定科系' : 'Not set')} • {user.gender || (language === 'zh' ? '保密' : 'Private')}
           </p>
         </div>
       </div>
@@ -516,7 +551,7 @@ const MatchCard = ({ user, matchType, currentUser }) => {
           color: COLORS.DEEP_NAVY,
           marginBottom: '8px',
         }}>
-          配對原因：
+          {language === 'zh' ? '配對原因：' : 'Match Reasons:'}
         </p>
         <ul style={{
           listStyle: 'none',
@@ -537,7 +572,7 @@ const MatchCard = ({ user, matchType, currentUser }) => {
           ))}
           {matchReasons.length === 0 && (
             <li style={{ fontSize: '0.85rem', color: COLORS.MORANDI_BROWN }}>
-              基於興趣與偏好匹配
+              {language === 'zh' ? '基於興趣與偏好匹配' : 'Based on interests and preferences'}
             </li>
           )}
         </ul>
@@ -561,7 +596,7 @@ const MatchCard = ({ user, matchType, currentUser }) => {
         onMouseEnter={(e) => e.target.style.opacity = '0.9'}
         onMouseLeave={(e) => e.target.style.opacity = '1'}
       >
-        查看詳細資料 →
+        {language === 'zh' ? '查看詳細資料 →' : 'View Profile →'}
       </Link>
     </div>
   );

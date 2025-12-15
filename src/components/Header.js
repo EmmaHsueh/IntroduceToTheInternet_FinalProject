@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // 統一配色定義
 const COLOR_BACKGROUND_LIGHT = '#ffffff'; // 白色背景
@@ -16,8 +17,35 @@ const SITE_LOGO_PATH = '/logo.png';
 
 const Header = () => {
     const { currentUser, userProfile, logout } = useAuth();
+    const { language } = useLanguage();
     const navigate = useNavigate();
     const [showDropdown, setShowDropdown] = useState(false);
+
+    // 語言內容
+    const content = {
+        zh: {
+            logoAlt: '師聲論壇 Logo',
+            nav: ['首頁', '看板', '智慧配對', '即時揪團'],
+            defaultUser: '用戶',
+            profile: '個人資料',
+            editProfile: '編輯個人資料',
+            logout: '登出',
+            loginRegister: '登入/註冊',
+            logoutError: '登出失敗，請稍後再試'
+        },
+        en: {
+            logoAlt: 'NTNU Talk Logo',
+            nav: ['Home', 'Boards', 'Matching', 'Events'],
+            defaultUser: 'User',
+            profile: 'Profile',
+            editProfile: 'Edit Profile',
+            logout: 'Logout',
+            loginRegister: 'Login/Register',
+            logoutError: 'Logout failed, please try again later'
+        }
+    };
+
+    const text = content[language];
     
     // 樣式定義
     const headerStyle = {
@@ -76,7 +104,7 @@ const Header = () => {
             navigate('/');
         } catch (error) {
             console.error('登出失敗:', error);
-            alert('登出失敗，請稍後再試');
+            alert(text.logoutError);
         }
     };
 
@@ -98,7 +126,7 @@ const Header = () => {
                     {/* 圖片 Logo */}
                     <img
                         src={SITE_LOGO_PATH}
-                        alt="師聲論壇 Logo"
+                        alt={text.logoAlt}
                         style={logoImgStyle}
                         onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.08)'}
                         onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
@@ -112,17 +140,17 @@ const Header = () => {
                 <nav>
                     <ul style={{ display: 'flex', listStyle: 'none', margin: 0, padding: 0, alignItems: 'center' }}>
                         {/* 基本導覽連結 */}
-                        {['首頁', '看板', '智慧配對', '即時揪團'].map((text, index) => {
-                            const paths = ['/', '/boards', '/matching', '/events-map']; // ⬅️ 更新為 /matching
+                        {text.nav.map((navText, index) => {
+                            const paths = ['/', '/boards', '/matching', '/events-map'];
                             return (
-                                <li key={text} style={navItemStyle}>
+                                <li key={navText} style={navItemStyle}>
                                     <Link
                                         to={paths[index]}
                                         style={navLinkBaseStyle}
                                         onMouseOver={handleMouseOver}
                                         onMouseOut={handleMouseOut}
                                     >
-                                        {text}
+                                        {navText}
                                     </Link>
                                 </li>
                             );
@@ -166,7 +194,7 @@ const Header = () => {
                                     </div>
                                     {/* 用戶名稱 */}
                                     <span style={{ color: COLOR_PRIMARY_TEXT, fontWeight: '500', fontSize: '15px' }}>
-                                        {userProfile?.nickname || currentUser.email?.split('@')[0] || '用戶'}
+                                        {userProfile?.nickname || currentUser.email?.split('@')[0] || text.defaultUser}
                                     </span>
                                     {/* 下拉箭頭 */}
                                     <span style={{ color: COLOR_SECONDARY_TEXT, fontSize: '12px' }}>
@@ -203,7 +231,7 @@ const Header = () => {
                                             onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
                                             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                         >
-                                            個人資料
+                                            {text.profile}
                                         </Link>
 
                                         {/* 編輯個人資料連結 */}
@@ -221,7 +249,7 @@ const Header = () => {
                                             onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
                                             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                         >
-                                            編輯個人資料
+                                            {text.editProfile}
                                         </Link>
 
                                         {/* 登出按鈕 */}
@@ -247,7 +275,7 @@ const Header = () => {
                                                 e.currentTarget.style.backgroundColor = 'transparent';
                                             }}
                                         >
-                                            登出
+                                            {text.logout}
                                         </button>
                                     </div>
                                 )}
@@ -261,7 +289,7 @@ const Header = () => {
                                     onMouseOver={handleMouseOver}
                                     onMouseOut={handleMouseOut}
                                 >
-                                    登入/註冊
+                                    {text.loginRegister}
                                 </Link>
                             </li>
                         )}

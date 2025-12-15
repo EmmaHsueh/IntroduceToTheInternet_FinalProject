@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { collection, query, orderBy, limit, getDocs, getCountFromServer } from 'firebase/firestore';
 import { db } from '../firebase';
 import Icon from '../components/Icons';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // 顏色常數
 const COLORS = {
@@ -16,7 +17,9 @@ const COLORS = {
   LIGHT_BEIGE: '#faf8f3',
 };
 
-const HeroSection = ({ language, setLanguage }) => {
+const HeroSection = () => {
+  const { language, setLanguage } = useLanguage();
+
   const content = {
     zh: {
       title: '歡迎來到師聲',
@@ -24,15 +27,13 @@ const HeroSection = ({ language, setLanguage }) => {
       description: '語言交換 • 美食探索 • 活動揪團 • AI 智能助手',
       btnJoin: '立即加入',
       btnExplore: '探索看板',
-      btnAI: 'AI 助手',
     },
     en: {
-      title: 'Welcome to NTNU Voice',
+      title: 'Welcome to NTNU Talk',
       subtitle: 'Your Community for International Students',
       description: 'Language Exchange • Food & Culture • Events • AI Helper',
       btnJoin: 'Join Now',
       btnExplore: 'Explore Boards',
-      btnAI: 'AI Chat',
     }
   };
 
@@ -53,7 +54,7 @@ const HeroSection = ({ language, setLanguage }) => {
         padding: '30px 20px 40px',
       }}
     >
-      {/* 語言切換按鈕 */}
+      {/* 語言切換按鈕 - 控制全站語言 */}
       <div style={{ position: 'absolute', top: '25px', right: '30px', display: 'flex', gap: '10px' }}>
         <button
           onClick={() => setLanguage('zh')}
@@ -103,7 +104,7 @@ const HeroSection = ({ language, setLanguage }) => {
         />
       </div>
 
-      {/* 主標題 */}
+      {/* 主標題 - 根據語言切換 */}
       <h1 style={{
         fontSize: 'clamp(2.5rem, 5vw, 4rem)',
         margin: '0 0 20px 0',
@@ -113,7 +114,7 @@ const HeroSection = ({ language, setLanguage }) => {
         {text.title}
       </h1>
 
-      {/* 副標題 */}
+      {/* 副標題 - 根據語言切換 */}
       <p style={{
         fontSize: 'clamp(1.2rem, 2.5vw, 1.8rem)',
         marginBottom: '15px',
@@ -122,7 +123,7 @@ const HeroSection = ({ language, setLanguage }) => {
         {text.subtitle}
       </p>
 
-      {/* 描述 */}
+      {/* 描述 - 根據語言切換 */}
       <p style={{
         fontSize: 'clamp(1rem, 2vw, 1.2rem)',
         marginBottom: '40px',
@@ -132,7 +133,7 @@ const HeroSection = ({ language, setLanguage }) => {
         {text.description}
       </p>
 
-      {/* CTA 按鈕組 */}
+      {/* CTA 按鈕組 - 根據語言切換 */}
       <div style={{
         display: 'flex',
         flexWrap: 'wrap',
@@ -182,17 +183,25 @@ const HeroSection = ({ language, setLanguage }) => {
           {text.btnExplore}
         </Link>
       </div>
+      
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      
+
 
       {/* 裝飾性波浪 SVG */}
-      <svg style={{ position: 'absolute', bottom: '-60px', left: 0, width: '100%', pointerEvents: 'none' }} viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg style={{ position: 'absolute', bottom: '-30px', left: 0, width: '100%', pointerEvents: 'none' }} viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M0,64L80,69.3C160,75,320,85,480,80C640,75,800,53,960,48C1120,43,1280,53,1360,58.7L1440,64L1440,120L1360,120C1280,120,1120,120,960,120C800,120,640,120,480,120C320,120,160,120,80,120L0,120Z" fill={COLORS.OFF_WHITE}/>
       </svg>
     </div>
   );
 };
 
-// 功能特色卡片組件
-const FeatureCard = ({ iconType, titleZh, titleEn, descZh, descEn, link, language }) => (
+// 功能特色卡片組件 - 保持中英文混雜
+const FeatureCard = ({ iconType, title, desc, link }) => (
   <Link
     to={link}
     style={{
@@ -221,65 +230,103 @@ const FeatureCard = ({ iconType, titleZh, titleEn, descZh, descEn, link, languag
       <Icon type={iconType} size={48} color={COLORS.BRICK_RED} />
     </div>
     <h3 style={{ fontSize: '1.4rem', marginBottom: '10px', color: COLORS.BRICK_RED }}>
-      {language === 'zh' ? titleZh : titleEn}
+      {title}
     </h3>
     <p style={{ fontSize: '1rem', color: COLORS.OLIVE_GREEN, lineHeight: '1.6' }}>
-      {language === 'zh' ? descZh : descEn}
+      {desc}
     </p>
   </Link>
 );
 
-const FeaturesSection = ({ language }) => {
-  const features = [
-    {
-      iconType: 'comments',
-      titleZh: '語言交換',
-      titleEn: 'Language Exchange',
-      descZh: '與母語者練習中英文，提升語言能力',
-      descEn: 'Practice languages with native speakers',
-      link: '/boards/other',
+const FeaturesSection = () => {
+  const { language } = useLanguage();
+
+  const content = {
+    zh: {
+      title: '為什麼選擇師聲？',
+      features: [
+        {
+          iconType: 'comments',
+          title: '語言交換',
+          desc: '與母語者練習中英文，提升語言能力',
+          link: '/boards/other',
+        },
+        {
+          iconType: 'food',
+          title: '美食探索',
+          desc: '發掘師大周邊隱藏美食與文化景點',
+          link: '/boards/food',
+        },
+        {
+          iconType: 'calendar',
+          title: '活動揪團',
+          desc: '參加校園活動，認識新朋友',
+          link: '/boards/events',
+        },
+        {
+          iconType: 'chat',
+          title: 'AI 智能助手',
+          desc: '24小時智能客服，解答你的疑問',
+          link: '/boards',
+        },
+        {
+          iconType: 'book',
+          title: '課程討論',
+          desc: '分享課程心得，找讀書夥伴',
+          link: '/boards/courses',
+        },
+        {
+          iconType: 'handshake',
+          title: '智慧配對',
+          desc: 'AI 智能配對最適合的語言交換、學習夥伴',
+          link: '/matching',
+        },
+      ]
     },
-    {
-      iconType: 'food',
-      titleZh: '美食探索',
-      titleEn: 'Food & Culture',
-      descZh: '發掘師大周邊隱藏美食與文化景點',
-      descEn: 'Discover local food and cultural spots',
-      link: '/boards/food',
-    },
-    {
-      iconType: 'calendar',
-      titleZh: '活動揪團',
-      titleEn: 'Events & Meetups',
-      descZh: '參加校園活動，認識新朋友',
-      descEn: 'Join campus events and make friends',
-      link: '/boards/events',
-    },
-    {
-      iconType: 'chat',
-      titleZh: 'AI 智能助手',
-      titleEn: 'AI Helper',
-      descZh: '24小時智能客服，解答你的疑問',
-      descEn: '24/7 AI assistant for your questions',
-      link: '/boards',
-    },
-    {
-      iconType: 'book',
-      titleZh: '課程討論',
-      titleEn: 'Course Forum',
-      descZh: '分享課程心得，找讀書夥伴',
-      descEn: 'Share course reviews, find study buddies',
-      link: '/boards/courses',
-    },
-    {
-      iconType: 'handshake',
-      titleZh: '智慧配對',
-      titleEn: 'Smart Matching',
-      descZh: 'AI 智能配對最適合的語言交換、學習夥伴',
-      descEn: 'AI-powered matching for partners & roommates',
-      link: '/matching',
-    },
-  ];
+    en: {
+      title: 'Why Choose NTNU Talk?',
+      features: [
+        {
+          iconType: 'comments',
+          title: 'Language Exchange',
+          desc: 'Practice languages with native speakers',
+          link: '/boards/other',
+        },
+        {
+          iconType: 'food',
+          title: 'Food & Culture',
+          desc: 'Discover local food and cultural spots',
+          link: '/boards/food',
+        },
+        {
+          iconType: 'calendar',
+          title: 'Events & Meetups',
+          desc: 'Join campus events and make friends',
+          link: '/boards/events',
+        },
+        {
+          iconType: 'chat',
+          title: 'AI Helper',
+          desc: '24/7 AI assistant for your questions',
+          link: '/boards',
+        },
+        {
+          iconType: 'book',
+          title: 'Course Forum',
+          desc: 'Share course reviews, find study buddies',
+          link: '/boards/courses',
+        },
+        {
+          iconType: 'handshake',
+          title: 'Smart Matching',
+          desc: 'AI-powered matching for partners & roommates',
+          link: '/matching',
+        },
+      ]
+    }
+  };
+
+  const text = content[language];
 
   return (
     <section style={{
@@ -293,7 +340,7 @@ const FeaturesSection = ({ language }) => {
           marginBottom: '50px',
           color: COLORS.DEEP_NAVY,
         }}>
-          {language === 'zh' ? '為什麼選擇師聲？' : 'Why Choose NTNU Voice?'}
+          {text.title}
         </h2>
 
         <div style={{
@@ -302,8 +349,8 @@ const FeaturesSection = ({ language }) => {
           gap: '30px',
           justifyContent: 'center',
         }}>
-          {features.map((feature, index) => (
-            <FeatureCard key={index} {...feature} language={language} />
+          {text.features.map((feature, index) => (
+            <FeatureCard key={index} {...feature} />
           ))}
         </div>
       </div>
@@ -315,6 +362,41 @@ const FeaturesSection = ({ language }) => {
 const LiveFeedSection = () => {
   const [recentPosts, setRecentPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // 輔助函數：將看板名稱轉換為路由路徑
+  const getBoardRoute = (boardName) => {
+    // 如果 boardName 已經是英文路徑格式，直接返回
+    if (boardName && !boardName.match(/[\u4e00-\u9fa5]/)) {
+      return boardName.toLowerCase();
+    }
+
+    // 中文到英文路徑的映射
+    const boardRouteMap = {
+      '美食看板': 'food',
+      '食物': 'food',
+      'Food': 'food',
+      '國際交流區': 'weather',
+      '國際': 'weather',
+      'International': 'weather',
+      '活動情報站': 'events',
+      '活動': 'events',
+      'Events': 'events',
+      '社團與招募': 'clubs',
+      '社團': 'clubs',
+      'Clubs': 'clubs',
+      '課程討論區': 'courses',
+      '課程': 'courses',
+      'Courses': 'courses',
+      '宿舍生活': 'outfit',
+      '宿舍': 'outfit',
+      'Dormitory': 'outfit',
+      '綜合討論區': 'other',
+      '其他': 'other',
+      'Other': 'other',
+    };
+
+    return boardRouteMap[boardName] || 'other';
+  };
 
   useEffect(() => {
     const fetchRecentPosts = async () => {
@@ -367,7 +449,7 @@ const LiveFeedSection = () => {
             {recentPosts.map(post => (
               <Link
                 key={post.id}
-                to={`/boards/${post.boardName}/${post.id}`}
+                to={`/boards/${getBoardRoute(post.boardName)}/${post.id}`}
                 style={{
                   padding: '25px',
                   background: COLORS.LIGHT_BEIGE,
@@ -448,7 +530,7 @@ const LiveFeedSection = () => {
             onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
             onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
           >
-            查看所有看板 View All Boards →
+            View All Boards 查看所有看板 →
           </Link>
         </div>
       </div>
@@ -549,14 +631,14 @@ const FinalCTA = () => (
       marginBottom: '20px',
       fontWeight: 'bold',
     }}>
-      準備好加入我們了嗎？
+      Ready to Join the Community?
     </h2>
     <p style={{
       fontSize: '1.3rem',
       marginBottom: '40px',
       opacity: 0.9,
     }}>
-      Ready to Join the Community?
+      準備好加入我們了嗎？
     </p>
     <Link
       to="/login"
@@ -582,15 +664,12 @@ const FinalCTA = () => (
 
 // 主頁面組件
 const HomePage = () => {
-  // 統一管理語言狀態，預設為英文
-  const [language, setLanguage] = useState('en');
-
   return (
     <>
       <Header />
       <main>
-        <HeroSection language={language} setLanguage={setLanguage} />
-        <FeaturesSection language={language} />
+        <HeroSection />
+        <FeaturesSection />
         <LiveFeedSection />
         <StatsSection />
         <FinalCTA />

@@ -1,16 +1,31 @@
 // src/components/BoardNav.js
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 
-const categories = [
-  { name: '食物', link: '/boards/food' },
-  { name: '國際', link: '/boards/weather' }, 
-  { name: '活動', link: '/boards/events' }, 
-  { name: '社團', link: '/boards/clubs' }, 
-  { name: '課程', link: '/boards/courses' }, 
-  { name: '宿舍', link: '/boards/outfit' }, 
-  { name: '其他', link: '/boards/other' }, 
-];
+const getCategories = (language) => {
+  const categories = {
+    zh: [
+      { name: '食物', link: '/boards/food' },
+      { name: '國際', link: '/boards/weather' },
+      { name: '活動', link: '/boards/events' },
+      { name: '社團', link: '/boards/clubs' },
+      { name: '課程', link: '/boards/courses' },
+      { name: '宿舍', link: '/boards/outfit' },
+      { name: '其他', link: '/boards/other' },
+    ],
+    en: [
+      { name: 'Food', link: '/boards/food' },
+      { name: 'International', link: '/boards/weather' },
+      { name: 'Events', link: '/boards/events' },
+      { name: 'Clubs', link: '/boards/clubs' },
+      { name: 'Courses', link: '/boards/courses' },
+      { name: 'Dormitory', link: '/boards/outfit' },
+      { name: 'Other', link: '/boards/other' },
+    ]
+  };
+  return categories[language];
+};
 
 // 定義莫蘭迪色和黑白灰
 const COLOR_MORANDI_BLUE = '#1e2a38'; // 淺灰藍 (主色)
@@ -20,13 +35,16 @@ const COLOR_BACKGROUND_LIGHT = '#ffffff'; // 白色背景 (或 #f8f8f8)
 const COLOR_BORDER = '#b0adadff'; // 淺灰邊框
 
 const BoardNav = () => {
+  const { language } = useLanguage();
+  const categories = getCategories(language);
+
   return (
-    <div 
-      className="board-nav-group" 
-      style={{ 
-        display: 'flex', 
+    <div
+      className="board-nav-group"
+      style={{
+        display: 'flex',
         flexWrap: 'wrap',
-        justifyContent: 'center', 
+        justifyContent: 'center',
         padding: '20px 10px', // 增加垂直間距
         margin: '20px auto',
         maxWidth: '1000px',

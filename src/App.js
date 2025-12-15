@@ -5,6 +5,9 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 // 🔥 引入 AuthProvider
 import { AuthProvider } from './contexts/AuthContext';
 
+// 🔥 引入 LanguageProvider
+import { LanguageProvider } from './contexts/LanguageContext';
+
 // 🔥 引入聊天訊息清理功能
 import { cleanupExpiredMessages } from './services/chatService';
 
@@ -72,11 +75,12 @@ function App() {
   }
 
   return (
-    <AuthProvider>
-      <Router>
-      <Routes>
-        {/* 首頁 */}
-        <Route path="/" element={<HomePage />} />
+    <LanguageProvider>
+      <AuthProvider>
+        <Router>
+        <Routes>
+          {/* 首頁 */}
+          <Route path="/" element={<HomePage />} />
         
         {/* 登入表單與會員功能 */}
         <Route path="/login" element={<LoginPage />} />
@@ -124,10 +128,11 @@ function App() {
         {/* 媒體資源頁面路由 */}
         <Route path="/media" element={<MediaPage />} />
 
-      </Routes>
-      <AITalk />
-    </Router>
-    </AuthProvider>
+        </Routes>
+        <AITalk />
+      </Router>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 

@@ -10,7 +10,10 @@ import ChatWidget from './ChatWidget'; // 新增：引入獨立的 ChatWidget �
 import { listenToPosts, createPost, addCommentToPost } from '../services/postService';
 
 //  新增：引入認證相關功能
-import { useAuth } from '../contexts/AuthContext'; 
+import { useAuth } from '../contexts/AuthContext';
+
+//  新增：引入語言切換功能
+import { useLanguage } from '../contexts/LanguageContext'; 
 
 
 // ------------------------------------
@@ -38,7 +41,7 @@ const initialPosts = [
 // ------------------------------------
 // 輔助組件 (Comment) - 樣式優化 (保持不變)
 // ------------------------------------
-const Comment = ({ comment }) => (
+const Comment = ({ comment, language }) => (
     <div style={{ display: 'flex', padding: '15px 0', borderBottom: `1px dashed ${COLOR_BORDER}`, alignItems: 'flex-start' }}>
         {/* 頭像 */}
         <div style={{ width: '40px', marginRight: '15px', flexShrink: 0 }}>
@@ -51,16 +54,16 @@ const Comment = ({ comment }) => (
             <div style={{ fontWeight: '600', fontSize: 'small', color: COLOR_DEEP_NAVY }}>{comment.author}</div>
             <div style={{ fontSize: 'x-small', color: COLOR_SECONDARY_TEXT, marginBottom: '5px' }}>
                 <time>{comment.date}</time>
-                <span style={{ marginLeft: '10px', cursor: 'pointer', transition: 'color 0.3s' }} 
+                <span style={{ marginLeft: '10px', cursor: 'pointer', transition: 'color 0.3s' }}
                     onMouseOver={(e) => e.currentTarget.style.color = COLOR_DEEP_NAVY}
                     onMouseOut={(e) => e.currentTarget.style.color = COLOR_SECONDARY_TEXT}
-                >| 編輯</span>
+                >| {language === 'zh' ? '編輯' : 'Edit'}</span>
             </div>
             <p style={{ margin: '0 0 10px 0', color: COLOR_DEEP_NAVY }}>{comment.content}</p>
             <a href={`/reply/${comment.id}`} style={{ fontSize: 'small', color: COLOR_MORANDI_BROWN, textDecoration: 'none', transition: 'color 0.3s' }}
                onMouseOver={(e) => e.currentTarget.style.color = COLOR_BRICK_RED} // Hover 使用磚紅
                onMouseOut={(e) => e.currentTarget.style.color = COLOR_MORANDI_BROWN}
-            >回覆</a>
+            >{language === 'zh' ? '回覆' : 'Reply'}</a>
         </div>
     </div>
 );
@@ -75,13 +78,13 @@ const Comment = ({ comment }) => (
 // ------------------------------------
 // 輔助組件 (Post) - 調整為顯示第一張圖 (保持不變)
 // ------------------------------------
-const Post = ({ post, onClick }) => (
-    <div 
+const Post = ({ post, onClick, language }) => (
+    <div
 		onClick={onClick}
-		style={{ 
-			border: `1px solid ${COLOR_BORDER}`, 
-			padding: '18px', 
-			borderRadius: '8px', 
+		style={{
+			border: `1px solid ${COLOR_BORDER}`,
+			padding: '18px',
+			borderRadius: '8px',
 			marginBottom: '15px',
 			backgroundColor: COLOR_BACKGROUND_LIGHT,
 			cursor: 'pointer',
@@ -94,16 +97,16 @@ const Post = ({ post, onClick }) => (
 		<div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
 			{/* 貼文預覽圖：只顯示第一張圖 */}
 			{post.imageUrls && post.imageUrls.length > 0 && (
-				<img 
+				<img
 					src={post.imageUrls[0]} // 顯示陣列中的第一張圖
-					alt="貼文圖片預覽" 
+					alt={language === 'zh' ? '貼文圖片預覽' : 'Post image preview'}
 					style={{ width: '60px', height: '60px', flexShrink: 0, borderRadius: '4px', objectFit: 'cover', border: `1px solid ${COLOR_BORDER}` }}
 				/>
 			)}
 			<div>
 				<h4 style={{ margin: '0 0 8px 0', color: COLOR_DEEP_NAVY, fontWeight: '500' }}>{post.title}</h4>
 				<div style={{ fontSize: 'small', color: COLOR_SECONDARY_TEXT, marginBottom: '5px' }}>
-					作者: **{post.author}** | 發表於: {post.date} | 留言: <span style={{ color: COLOR_MORANDI_BROWN, fontWeight: 'bold' }}>{post.commentCount}</span>
+					{language === 'zh' ? '作者' : 'Author'}: **{post.author}** | {language === 'zh' ? '發表於' : 'Posted on'}: {post.date} | {language === 'zh' ? '留言' : 'Comments'}: <span style={{ color: COLOR_MORANDI_BROWN, fontWeight: 'bold' }}>{post.commentCount}</span>
 				</div>
 				<p style={{ margin: '0', fontSize: 'small', color: COLOR_SECONDARY_TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
 					{post.content.substring(0, 100)}...
@@ -120,6 +123,9 @@ const Post = ({ post, onClick }) => (
 const BoardTemplate = ({ boardName }) => {
     // 🔥 新增：取得當前登入用戶資訊
     const { currentUser, userProfile } = useAuth();
+
+    // 🔥 新增：取得語言設定
+    const { language } = useLanguage();
 
     // 初始化 posts 狀態為空陣列
     const [posts, setPosts] = useState([]);
@@ -153,9 +159,9 @@ const BoardTemplate = ({ boardName }) => {
     const handleNewPostSubmit = async (title, content, imageUrls) => {
         try {
             if (!currentUser) {
-                const errMsg = '請先登入才能發文！';
+                const errMsg = language === 'zh' ? '請先登入才能發文！' : 'Please log in to post!';
                 alert(errMsg);
-                throw new Error(errMsg); 
+                throw new Error(errMsg);
             }
 
             console.log('準備發送貼文到 Firestore...');
@@ -179,7 +185,8 @@ const BoardTemplate = ({ boardName }) => {
 
         } catch (error) {
             console.error('發文失敗:', error);
-            alert(`發文失敗：${error.message}`);
+            const errorMsg = language === 'zh' ? `發文失敗：${error.message}` : `Post failed: ${error.message}`;
+            alert(errorMsg);
             // 🔥 重要：拋出錯誤，讓 PostForm 知道失敗了，不要清空表單
             throw error;
         }
@@ -237,7 +244,7 @@ const BoardTemplate = ({ boardName }) => {
                                 try {
                                     // ⚠️ 檢查用戶是否已登入
                                     if (!currentUser) {
-                                        alert('請先登入才能留言！');
+                                        alert(language === 'zh' ? '請先登入才能留言！' : 'Please log in to comment!');
                                         return;
                                     }
 
@@ -268,42 +275,43 @@ const BoardTemplate = ({ boardName }) => {
 
                                 } catch (error) {
                                     console.error('留言失敗:', error);
-                                    alert(`留言失敗：${error.message}`);
+                                    const errorMsg = language === 'zh' ? `留言失敗：${error.message}` : `Comment failed: ${error.message}`;
+                                    alert(errorMsg);
                                 }
                             }}
                         />
                     ) : (
                         /* 🔸 顯示原本看板內容 */
                         <>
-                            <h2 style={{ 
-                                borderBottom: `2px solid ${COLOR_HIGHLIGHT_LINE}`, 
-                                color: COLOR_DEEP_NAVY, 
-                                paddingBottom: '15px', 
-                                marginBottom: '30px', 
-                                marginTop: '0', 
-                                fontWeight: '400' 
+                            <h2 style={{
+                                borderBottom: `2px solid ${COLOR_HIGHLIGHT_LINE}`,
+                                color: COLOR_DEEP_NAVY,
+                                paddingBottom: '15px',
+                                marginBottom: '30px',
+                                marginTop: '0',
+                                fontWeight: '400'
                             }}>
-                                【{boardName}】 看板討論區
+                                【{boardName}】 {language === 'zh' ? '看板討論區' : 'Board Discussion'}
                             </h2>
 
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                                <button 
+                                <button
                                     onClick={() => setIsPosting(true)}
                                     style={POST_BUTTON_STYLE}
                                     onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_OLIVE_GREEN}
                                     onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_BRICK_RED}
                                 >
-                                    + 發表新貼文
+                                    {language === 'zh' ? '+ 發表新貼文' : '+ New Post'}
                                 </button>
 
                                 <button
                                     onClick={() => setShowChat(true)}
                                     style={CHAT_ICON_BUTTON_STYLE}
-                                    title="開啟即時聊天室"
+                                    title={language === 'zh' ? '開啟即時聊天室' : 'Open Live Chat'}
                                     onMouseOver={e => e.currentTarget.style.backgroundColor = COLOR_OLIVE_GREEN}
                                     onMouseOut={e => e.currentTarget.style.backgroundColor = COLOR_MORANDI_BROWN}
                                 >
-                                    即時聊天室
+                                    {language === 'zh' ? '💬 即時聊天室' : '💬 Live Chat'}
                                 </button>
                             </div>
 
@@ -315,29 +323,29 @@ const BoardTemplate = ({ boardName }) => {
                                 />
                             ) : (
                                 <>
-                                    <h3 style={{ 
-                                        borderLeft: `5px solid ${COLOR_HIGHLIGHT_LINE}`, 
-                                        color: COLOR_DEEP_NAVY, 
-                                        paddingLeft: '15px', 
-                                        marginBottom: '20px', 
-                                        fontWeight: '500' 
-                                    }}>最新文章</h3>
+                                    <h3 style={{
+                                        borderLeft: `5px solid ${COLOR_HIGHLIGHT_LINE}`,
+                                        color: COLOR_DEEP_NAVY,
+                                        paddingLeft: '15px',
+                                        marginBottom: '20px',
+                                        fontWeight: '500'
+                                    }}>{language === 'zh' ? '最新文章' : 'Latest Posts'}</h3>
 
                                     <div className="posts-list" style={{ marginBottom: '20px' }}>
                                         {/* 🔥 新增：顯示載入狀態 */}
                                         {loading ? (
                                             <div style={{ textAlign: 'center', color: COLOR_SECONDARY_TEXT, padding: '40px' }}>
                                                 <div style={{ fontSize: '24px', marginBottom: '10px' }}>⏳</div>
-                                                <div>正在載入貼文...</div>
+                                                <div>{language === 'zh' ? '正在載入貼文...' : 'Loading posts...'}</div>
                                             </div>
                                         ) : (
                                             <>
                                                 {posts.map(post => (
-                                                    <Post key={post.id} post={post} onClick={() => setSelectedPost(post)} />
+                                                    <Post key={post.id} post={post} onClick={() => setSelectedPost(post)} language={language} />
                                                 ))}
                                                 {posts.length === 0 && (
                                                     <div style={{ textAlign: 'center', color: COLOR_SECONDARY_TEXT, padding: '20px' }}>
-                                                        看板目前沒有文章。
+                                                        {language === 'zh' ? '看板目前沒有文章。' : 'No posts in this board yet.'}
                                                     </div>
                                                 )}
                                             </>
