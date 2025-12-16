@@ -1,724 +1,629 @@
-Run:
+# 師聲 (Teacher's Voice) - 師大校園論壇系統
 
+> 一個結合 React + Firebase + AI 聊天機器人的現代化校園論壇平台
+
+## 專案簡介
+
+「師聲」是一個專為台灣師範大學設計的校園論壇系統，提供學生討論美食、天氣、活動、社團、課程等主題的互動平台。系統整合了即時聊天、AI 智能助手、內容審核、圖片去背等功能，打造完整的校園社群體驗。
+
+### 核心功能
+
+- 用戶認證系統：Email/Password 與 Google OAuth 登入
+- 多板塊論壇：美食、天氣、活動、社團、課程、穿搭、其他
+- 即時聊天室：每個板塊獨立的 Firebase 即時聊天功能
+- AI 智能助手：整合 Google Gemini + RAG 知識庫，提供校園資訊問答
+- 圖片處理：多圖上傳、圖片去背功能
+- 內容審核：使用 Google Perspective API 自動偵測不當內容
+- 翻譯功能：支援貼文多語言翻譯
+- 會員系統：個人資料、頭像、自我介紹
+
+---
+
+## 系統架構總覽
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                        使用者瀏覽器                              │
+│                                                                │
+│  ┌──────────────────────────────────────────────────────┐     │
+│  │              前端 (React 18.2.0)                      │     │
+│  │  • React Router (路由管理)                             │     │
+│  │  • Context API (全局狀態管理)                          │     │
+│  │  • Firebase SDK (客戶端)                              │     │
+│  └──────────────┬────────────────┬──────────────────────┘     │
+└─────────────────┼────────────────┼─────────────────────────────┘
+                  │                │
+                  │                │
+        ┌─────────▼────────┐  ┌───▼──────────────────────┐
+        │  Firebase 服務    │  │  Node.js + Express 後端   │
+        │  (Google Cloud)  │  │  (Render 託管)            │
+        ├──────────────────┤  ├──────────────────────────┤
+        │ • Firestore DB   │  │ API 端點:                 │
+        │ • Authentication │  │  /moderation             │
+        │ • Storage        │  │  /remove-bg              │
+        └──────────────────┘  │  /chat                   │
+                              │  /api/translate          │
+                              │  /api/health             │
+                              │                          │
+                              │ RAG 知識庫系統:           │
+                              │  • knowledge_base.txt    │
+                              │  • 向量檢索邏輯           │
+                              └────────┬─────────────────┘
+                                       │
+                      ┌────────────────┴────────────────┐
+                      │         外部 API 服務            │
+                      ├─────────────────────────────────┤
+                      │ • Google Perspective API (審核) │
+                      │ • Remove.bg API (圖片去背)       │
+                      │ • Google Gemini API (AI 聊天)   │
+                      │ • MyMemory Translation API      │
+                      └─────────────────────────────────┘
+```
+
+---
+
+## 技術架構詳解
+
+### 前端技術棧
+
+```
+前端
+├── React 18.2.0                 UI 框架
+├── React Router DOM 7.9.5       頁面路由管理
+├── Firebase SDK 10.10.0         後端服務整合
+├── React Icons 5.5.0            圖標庫
+└── React Scripts 5.0.1          構建工具 (Create React App)
+```
+
+### 後端技術棧
+
+```
+後端
+├── Node.js                      JavaScript 執行環境
+├── Express 5.2.1                Web 框架
+├── Firebase Admin               Firebase 服務端 SDK
+├── Multer 2.0.2                 檔案上傳處理
+├── Axios 1.13.2                 HTTP 請求
+├── CORS 2.8.5                   跨域資源共享
+└── Dotenv 17.2.3                環境變數管理
+```
+
+---
+
+## 專案檔案結構
+
+### 前端結構
+
+```
+src/
+├── components/              # 可重用組件
+│   ├── Header.js           # 網站導航列
+│   ├── BoardNav.js         # 板塊導航
+│   ├── PostForm.js         # 發文表單（含多圖上傳、去背、審核）
+│   ├── ChatWidget.js       # 即時聊天室組件
+│   ├── MemberCard.js       # 會員卡片
+│   └── MemberDirectory.js  # 會員目錄
+│
+├── contexts/               # React Context 全局狀態
+│   └── AuthContext.js      # 認證狀態管理
+│
+├── pages/                  # 頁面組件
+│   ├── HomePage.js         # 首頁
+│   ├── LoginPage.js        # 登入/註冊頁面
+│   ├── BoardTemplate.js    # 板塊模板（所有板塊共用）
+│   ├── PostDetailPage.js   # 貼文詳細頁面
+│   ├── ProfilePage.js      # 個人資料頁
+│   ├── ProfileEditPage.js  # 編輯個人資料
+│   ├── MembersPage.js      # 會員列表
+│   ├── MediaPage.js        # 媒體頁面
+│   └── BoardIndexPage.js   # 板塊索引
+│
+├── services/               # 業務邏輯服務
+│   ├── postService.js      # 貼文 CRUD (Firestore)
+│   └── chatService.js      # 聊天訊息 CRUD (Firestore)
+│
+├── firebase.js             # Firebase 配置
+├── App.js                  # 主應用組件 + 路由配置
+└── index.js                # 應用入口
+```
+
+### 後端結構
+
+```
+backend/
+├── server.js               # Express 伺服器主程式
+│   ├── RAG 系統 (第 34-205 行)
+│   │   ├── loadKnowledgeBase()    # 載入知識庫
+│   │   ├── simpleTokenize()       # 中文分詞
+│   │   ├── textToVector()         # 文字向量化
+│   │   ├── cosineSimilarity()     # 相似度計算
+│   │   └── retrieveFacts()        # 知識檢索
+│   │
+│   ├── API 端點
+│   │   ├── POST /remove-bg        # 圖片去背
+│   │   ├── POST /moderation       # 內容審核
+│   │   ├── POST /chat             # AI 聊天
+│   │   ├── POST /api/translate    # 翻譯
+│   │   └── GET  /api/health       # 健康檢查
+│   │
+│   └── 環境變數配置
+│
+├── knowledge_base.txt      # RAG 知識庫資料 (34 條師大校園資訊)
+├── test_rag.js            # RAG 系統測試腳本
+├── package.json           # 後端依賴配置
+└── .env                   # 環境變數 (不上傳 Git)
+```
+
+---
+
+## 資料流程圖
+
+### 發文流程
+
+```
+使用者填寫貼文
+       │
+       ├─ 標題 + 內容
+       ├─ 上傳多張圖片
+       └─ (可選) 圖片去背
+       │
+       ▼
+┌────────────────────┐
+│  前端 PostForm.js  │
+└──────┬─────────────┘
+       │
+       ├─ Step 1: 圖片去背 (可選)
+       │  POST /remove-bg
+       │  ├─ 前端上傳原圖
+       │  ├─ 後端轉發給 Remove.bg API
+       │  └─ 返回去背後的圖片
+       │
+       ├─ Step 2: 內容審核
+       │  POST /moderation
+       │  ├─ 前端傳送：{ content: "標題 + 內容" }
+       │  ├─ 後端呼叫 Google Perspective API
+       │  ├─ 檢查：惡意言論、人身攻擊、侮辱等
+       │  └─ 返回：{ flagged: true/false, categories: {...} }
+       │
+       │  如果違規 → 阻止發文，顯示違規原因
+       │  如果通過 → 繼續下一步
+       │
+       └─ Step 3: 寫入 Firestore
+          createPost() (postService.js)
+          ├─ 文章資料：
+          │  {
+          │    title: "標題",
+          │    content: "內容",
+          │    boardName: "Food",
+          │    authorId: "user123",
+          │    authorName: "暱稱",
+          │    imageUrls: ["data:image/png;base64,..."],
+          │    createdAt: Timestamp,
+          │    commentCount: 0,
+          │    comments: []
+          │  }
+          └─ 寫入 Firestore "posts" collection
+       │
+       ▼
+所有訂閱此板塊的用戶即時看到新貼文 (onSnapshot)
+```
+
+### AI 聊天流程
+
+```
+使用者提問：「師大有什麼好吃的？」
+       │
+       ▼
+前端發送請求
+POST /chat
+Body: { message: "師大有什麼好吃的？", role: "gentle" }
+       │
+       ▼
+┌─────────────────────────────────┐
+│  後端 RAG 系統處理               │
+├─────────────────────────────────┤
+│ Step 1: 文字向量化               │
+│  simpleTokenize()               │
+│  → ["師","大","有","什","麼"...] │
+│  textToVector()                 │
+│  → { "師": 0.125, "大": 0.125... }│
+│                                 │
+│ Step 2: 知識庫檢索               │
+│  與 34 條知識計算相似度           │
+│  cosineSimilarity()             │
+│  → 找到前 3 條最相關知識：         │
+│     1. [Food] 師大有什麼必吃美食？│
+│     2. [Food] 師大有什麼甜點推薦？│
+│     3. [Food] 師大有什麼平價小吃？│
+│                                 │
+│ Step 3: 生成 Prompt              │
+│  角色設定：溫柔學姊               │
+│  檢索到的知識：[上述 3 條]        │
+│  使用者問題：師大有什麼好吃的？    │
+└─────────────┬───────────────────┘
+              │
+              ▼
+呼叫 Google Gemini API
+model: "gemini-2.5-flash"
+       │
+       ▼
+返回 AI 生成回覆
+{ reply: "學姊告訴你～師大商圈最具代表性的宵夜是師園鹽酥雞..." }
+       │
+       ▼
+前端顯示回覆給使用者
+```
+
+### 即時聊天流程
+
+```
+使用者在板塊點擊「即時聊天室」
+       │
+       ▼
+┌──────────────────────────┐
+│  ChatWidget.js 掛載      │
+└────────┬─────────────────┘
+         │
+         ├─ useEffect 設定監聽器
+         │  listenToChatMessages(boardName)
+         │  onSnapshot(query(chatMessages, where("boardName", "==", "Food")))
+         │
+         ├─ 即時接收訊息
+         │  所有該板塊的聊天訊息自動同步
+         │
+         └─ 使用者發送訊息
+            sendChatMessage()
+            │
+            ├─ 檢查登入狀態 (currentUser)
+            ├─ 寫入 Firestore:
+            │  {
+            │    boardName: "Food",
+            │    sender: "暱稱",
+            │    senderId: "user123",
+            │    content: "訊息內容",
+            │    createdAt: Timestamp,
+            │    expiresAt: Timestamp + 30 天
+            │  }
+            └─ 所有在此板塊的用戶即時看到新訊息
+```
+
+---
+
+## 資料庫結構 (Firestore)
+
+### Collection: users
+
+```javascript
+{
+  uid: "firebase_user_id",
+  email: "user@example.com",
+  nickname: "暱稱",
+  user_login: "username",
+  first_name: "名",
+  last_name: "姓",
+  gender: "男/女/保密",
+  avatar: "emoji-student",
+  bio: "自我介紹",
+  createdAt: "2025-01-01T00:00:00.000Z"
+}
+```
+
+### Collection: posts
+
+```javascript
+{
+  title: "師園鹽酥雞真的超好吃！",
+  content: "昨天去吃了師園鹽酥雞...",
+  boardName: "Food",
+  authorId: "user123",
+  authorName: "美食愛好者",
+  imageUrls: ["data:image/png;base64,..."],
+  createdAt: Timestamp,
+  commentCount: 5,
+  comments: [
+    {
+      id: "comment1",
+      author: "回覆者",
+      authorId: "user456",
+      content: "我也覺得超好吃！",
+      createdAt: Timestamp
+    }
+  ]
+}
+```
+
+### Collection: chatMessages
+
+```javascript
+{
+  boardName: "Food",
+  sender: "聊天者暱稱",
+  senderId: "user789",
+  content: "有人知道師園今天有開嗎？",
+  createdAt: Timestamp,
+  expiresAt: Timestamp  // 30 天後自動刪除
+}
+```
+
+---
+
+## API 端點說明
+
+### 後端 API (Render 託管)
+
+**Base URL**: `https://introducetotheinternet-finalproject-0yrf.onrender.com`
+
+| 端點 | 方法 | 功能 | 請求格式 | 回應格式 |
+|------|------|------|----------|----------|
+| `/moderation` | POST | 內容審核 | `{ content: string }` | `{ flagged: boolean, categories: object }` |
+| `/remove-bg` | POST | 圖片去背 | `FormData { image_file: File }` | `PNG 圖片二進位資料` |
+| `/chat` | POST | AI 聊天 | `{ message: string, role: string }` | `{ reply: string }` |
+| `/api/translate` | POST | 文字翻譯 | `{ title: string, content: string, targetLanguage: string }` | `{ translatedTitle: string, translatedContent: string }` |
+| `/api/health` | GET | 健康檢查 | - | `{ status: string, knowledgeBase: object }` |
+
+---
+
+## 安裝與執行
+
+### 前置需求
+
+- Node.js 16+
+- npm 或 yarn
+- Firebase 專案 (已配置)
+- 各項 API Keys (見環境變數配置)
+
+### 前端安裝與啟動
+
+```bash
+# 安裝依賴
 npm install
+
+# 啟動開發伺服器
 npm start
 
-Replace src/firebase.js with your Firebase config to enable Auth/Firestore/Storage.
-
-🔴 高優先級 - 核心功能缺失
-
-  1. 整合 Firebase 實現真實資料持久化
-
-  現況問題：
-  - 貼文資料存在 localStorage，只能單機使用，無法跨用戶/裝置共享
-  - 會員資料、個人檔案都是寫死的模擬資料
-  - 留言資料也存在 localStorage
-
-  建議改善：
-  - 將所有貼文、留言資料遷移至 Firestore
-  - 建立完整的資料結構：
-  collections:
-    - users (用戶資料)
-    - boards (看板設定)
-    - posts (貼文，包含 boardId 欄位)
-    - comments (留言，包含 postId 參照)
-  - 實作即時資料同步（Firestore onSnapshot）
-
-  2. 完整實作 Firebase Authentication
-
-  現況問題：
-  - Auth.js 只是佔位符
-  - LoginForm.js 的登入只有 alert，沒有實際功能
-  - 沒有註冊流程整合
-  - 沒有權限控制機制
-
-  建議改善：
-  - 實作 Firebase Auth 的 Email/Password 登入
-  - 實作 Google 第三方登入（適合校園帳號整合）
-  - 新增 Protected Routes：未登入用戶無法發文、留言
-  - 實作「忘記密碼」功能（目前只有連結）
-  - 新增登入狀態管理（Context API 或 Redux）
-
-  3. 圖片上傳改用 Firebase Storage
-
-  現況問題：
-  - 圖片轉 Base64 存 localStorage 有嚴重大小限制（5-10MB）
-  - 多圖上傳會導致 localStorage 爆滿
-  - 無法跨裝置查看圖片
+# 開啟瀏覽器
+# http://localhost:3000
+```
 
-  建議改善：
-  - 上傳圖片至 Firebase Storage
-  - 在 Firestore 只儲存圖片 URL
-  - 實作圖片壓縮（降低儲存成本）
-  - 設定檔案大小與格式限制
+### 後端安裝與啟動
 
-  4. 整合內容審核機制
+```bash
+# 進入後端目錄
+cd backend
 
-  現況問題：
-  - 後端有 moderation API 但前端完全沒使用
-  - 用戶可以發布任何內容
+# 安裝依賴
+npm install
 
-  建議改善：
-  - 在 PostForm 送出前呼叫 /moderation API
-  - 在 Comments 送出前也進行審核
-  - 若內容被標記為不當，阻止發布並提示用戶
-  - 考慮改為 Cloud Functions 實作（避免 API Key 暴露）
+# 創建 .env 檔案（見下方環境變數配置）
+touch .env
 
-  ---
-  🟡 中優先級 - 重要社群功能
+# 啟動後端伺服器
+node server.js
 
-  5. 貼文與留言的編輯/刪除功能
+# 伺服器運行在
+# http://localhost:10000
+```
 
-  現況問題：
-  - 無法編輯或刪除已發布的貼文
-  - Comment 組件有「編輯」字樣但沒功能
-  - 無權限控制（任何人都不應能刪除他人貼文）
+---
 
-  建議改善：
-  - 新增「編輯貼文」按鈕（僅作者可見）
-  - 新增「刪除貼文」功能（作者 + 管理員）
-  - 實作留言的編輯/刪除
-  - 儲存編輯歷史記錄（可選）
+## 環境變數配置
 
-  6. 即時聊天室改用 Firestore 即時同步
+### 後端 .env 檔案
 
-  現況問題：
-  - ChatWidget 訊息只存在 local state
-  - 重新整理頁面訊息就消失
-  - 無法與其他用戶即時互動
+```bash
+# Google Perspective API (內容審核)
+PERSPECTIVE_API_KEY=your_perspective_api_key
 
-  建議改善：
-  - 使用 Firestore onSnapshot 實作真正的即時聊天
-  - 建立 chatMessages collection，按看板分組
-  - 顯示發言者頭像與暱稱
-  - 新增訊息時間戳記
-  - 考慮訊息數量限制（如保留最近 100 條）
+# Remove.bg API (圖片去背)
+REMOVE_BG_API_KEY=your_removebg_api_key
 
-  7. 完整的會員系統
+# Google Gemini API (AI 聊天)
+GEMINI_API_KEY=your_gemini_api_key
 
-  現況問題：
-  - MemberDirectory 使用假資料
-  - 無法查看其他用戶的個人檔案
-  - ProfilePage 的「我的貼文」「我的留言」都是假資料
+# 伺服器設定
+PORT=10000
+NODE_ENV=production
+```
 
-  建議改善：
-  - 從 Firestore users collection 載入真實會員資料
-  - 實作用戶個人檔案頁面路由（/members/:userId）
-  - ProfilePage 從 Firestore 查詢用戶實際發文與留言
-  - 新增「追蹤/好友」功能（可選）
+### 前端 Firebase 配置
 
-  8. 點讚/按讚功能
+已配置在 `src/firebase.js`：
 
-  現況問題：
-  - 完全沒有互動反饋機制
+```javascript
+const firebaseConfig = {
+  apiKey: "AIzaSyCwWX...",
+  authDomain: "ntnu-talk.firebaseapp.com",
+  projectId: "ntnu-talk",
+  storageBucket: "ntnu-talk.firebasestorage.app",
+  messagingSenderId: "851424068343",
+  appId: "1:851424068343:web:..."
+};
+```
 
-  建議改善：
-  - 貼文新增 likes 欄位（陣列存用戶 ID）
-  - 留言也可以按讚
-  - 顯示按讚數量與狀態
-  - 防止重複按讚
+---
 
-  9. 搜尋與篩選功能
+## 測試
 
-  現況問題：
-  - 看板內沒有搜尋功能
-  - 無法依條件篩選貼文（如最新、熱門、精華）
+### RAG 知識庫測試
 
-  建議改善：
-  - 新增貼文標題/內容搜尋（Firestore query 或 Algolia）
-  - 新增排序選項：最新、熱門（按留言數/讚數）
-  - 新增標籤系統（tag），方便分類
+```bash
+cd backend
 
-  ---
-  🟢 低優先級 - 進階功能
+# 執行完整測試套件
+node test_rag.js
 
-  10. 通知系統
+# 測試單個問題
+node test_rag.js 師大有什麼好吃的？
+```
 
-  - 有人回覆你的貼文時通知
-  - 有人按讚時通知
-  - 使用 Firestore 或 Firebase Cloud Messaging
+### 健康檢查
 
-  11. 私訊功能
+```bash
+# 本地測試
+curl http://localhost:10000/api/health
 
-  - 用戶之間一對一聊天
-  - 建立 conversations 與 messages collections
+# 正式環境測試
+curl https://introducetotheinternet-finalproject-0yrf.onrender.com/api/health
+```
 
-  12. 檢舉/封鎖機制
+---
 
-  - 檢舉不當內容
-  - 封鎖特定用戶
-  - 管理員審核介面
+## 核心組件說明
 
-  13. 精華文章/置頂功能
+### 前端核心組件
 
-  - 管理員可置頂重要公告
-  - 標記精華文章
+#### AuthContext.js - 全局認證狀態管理
 
-  14. 用戶權限分級
+功能：
+- 提供全局的用戶登入狀態 (currentUser, userProfile)
+- 註冊/登入/登出功能
+- Google OAuth 登入
+- 自動同步 Firestore 用戶資料
 
-  - 一般用戶、版主、管理員
-  - 不同權限有不同操作能力
+#### BoardTemplate.js - 板塊模板
 
-  15. 多媒體支援增強
+功能：
+- 所有板塊（美食、天氣等）共用的 UI 模板
+- 整合 PostForm (發文)、貼文列表、ChatWidget (聊天)
+- 使用 onSnapshot 即時監聽 Firestore 貼文變化
 
-  - 支援影片上傳
-  - 支援嵌入 YouTube/音樂連結
-  - 圖片輪播功能優化
+#### PostForm.js - 發文表單
 
-  16. 統計分析功能
+功能：
+- 多圖片上傳（支援預覽）
+- 呼叫 /remove-bg API 進行圖片去背
+- 呼叫 /moderation API 進行內容審核
+- 審核通過後寫入 Firestore
 
-  - 個人貼文瀏覽數統計
-  - 看板活躍度分析
-  - 熱門話題排行
+#### ChatWidget.js - 即時聊天室
 
-  ---
-  📋 技術債務與安全性改善
+功能：
+- 每個板塊獨立的聊天室
+- 使用 onSnapshot 即時同步訊息
+- 訊息保留 30 天自動刪除
+- 支援表情符號、換行
 
-  17. 環境變數管理
+### 後端核心模組
 
-  問題：
-  - PostForm.js 的 Remove.bg API Key 硬編碼在前端（line 6）
-  - 後端 OpenAI API Key 用 .env 但沒有提交範例檔
+#### RAG 知識庫系統 (server.js 第 34-205 行)
 
-  建議：
-  - 將 Remove.bg 功能移至後端 API
-  - 建立 .env.example 檔案
-  - 使用 Firebase Functions 保護 API Key
+功能：
+- 載入 knowledge_base.txt (34 條師大資訊)
+- 中文分詞與向量化 (TF 模型)
+- 餘弦相似度檢索
+- 為 Gemini API 提供上下文知識
 
-  18. 錯誤處理機制
+#### API 代理層
 
-  - 網路請求失敗時的重試機制
-  - 全域錯誤邊界（Error Boundary）
-  - Loading 狀態顯示
+功能：
+- 隱藏 API Keys (不暴露在前端)
+- 統一錯誤處理
+- 請求轉發 (Remove.bg, Perspective, Gemini, MyMemory)
 
-  19. 效能優化
+---
 
-  - 貼文列表使用無限滾動或分頁（目前全部載入）
-  - 圖片 lazy loading
-  - Firestore query 使用索引優化
+## 特色功能實作
 
-  ---
-  🎯 建議實作順序
+### RAG 增強式生成 (Retrieval-Augmented Generation)
 
-  如果要快速讓網站可用，建議按此順序：
+**技術實作**：
+- 自製 TF 向量化 (Term Frequency)
+- 餘弦相似度計算
+- 記憶體內向量檢索
+- 整合 Gemini API 生成回覆
 
-  1. 先完成 #2 Firebase Auth → 讓用戶能真實登入
-  2. 再完成 #1 Firestore 資料庫 → 讓貼文能跨用戶共享
-  3. 接著 #3 圖片上傳 → 解決 localStorage 限制
-  4. 然後 #4 內容審核 → 確保社群內容品質
-  5. 再依需求完成中低優先級功能
+**知識庫**：`knowledge_base.txt` (34 條)
+- 選課規則
+- 美食推薦
+- 社團活動
+- 宿舍資訊
+- 校園設施
+- 課程學習
+- 國際交流
 
-  這樣可以讓網站從「前端展示」進化成「真正可運作的社群平台」。
+### 多角色 AI 聊天
 
-  Firebase 是 Google 提供的後端即服務（Backend-as-a-Service, BaaS）平台。簡單來說：
+支援 3 種 AI 角色：
 
-  傳統開發方式 vs Firebase
+| 角色 ID | 人設 | 語氣 |
+|---------|------|------|
+| `gentle` | 溫柔學姊 | 體貼、有耐心、鼓勵性 |
+| `funny` | 搞笑學長 | 幽默風趣、白爛但善良 |
+| `default` | 大笨鳥 | 呆萌、提供情緒價值 |
 
-  傳統方式：
-  你需要自己寫：
-  1. Node.js/Python 後端伺服器 ❌
-  2. 資料庫（MySQL/MongoDB）❌
-  3. 用戶登入系統 ❌
-  4. 檔案儲存伺服器 ❌
-  5. 主機部署與維護 ❌
+### 即時聊天室
 
-  使用 Firebase：
-  Google 已經幫你準備好：
-  1. Authentication（登入系統）✅
-  2. Firestore（NoSQL 資料庫）✅
-  3. Storage（檔案儲存）✅
-  4. Hosting（網站部署）✅
-  5. 全自動擴展，不用管伺服器 ✅
+**技術實作**：
+- Firestore onSnapshot 即時監聽
+- 板塊隔離 (每個板塊獨立聊天室)
+- 自動過期機制 (30 天後刪除)
+- 登入才能發言
 
-  Firebase 核心服務
+### 內容審核機制
 
-  對你的專案來說，需要用到這三個：
+**審核項目**：
+- 惡意言論 (TOXICITY)
+- 嚴重惡意言論 (SEVERE_TOXICITY)
+- 人身攻擊 (IDENTITY_ATTACK)
+- 侮辱性言論 (INSULT)
+- 髒話/不雅字眼 (PROFANITY)
+- 威脅恐嚇 (THREAT)
 
-  | 服務                      | 用途          | 你專案中的應用               |
-  |-------------------------|-------------|-----------------------|
-  | Firebase Authentication | 用戶登入註冊系統    | 學號/Email 登入、Google 登入 |
-  | Cloud Firestore         | NoSQL 即時資料庫 | 儲存貼文、留言、用戶資料          |
-  | Cloud Storage           | 檔案儲存空間      | 儲存貼文圖片、用戶頭像           |
+**閾值**：0.5 (可在 server.js 調整)
 
-  ---
-  🚀 步驟一：建立 Firebase 專案
+---
 
-⏺ 1. 前往 Firebase Console
+## 專案亮點
 
-  1. 開啟瀏覽器前往：https://console.firebase.google.com/
-  2. 使用 Google 帳號登入
-  3. 點擊「新增專案」(Add project)
+1. **前後端分離架構**：React 前端 + Node.js 後端 + Firebase BaaS
+2. **即時同步**：Firestore onSnapshot 實現即時更新
+3. **AI 整合**：Gemini + 自建 RAG 知識庫
+4. **安全性**：內容審核、API Key 隔離、Firebase Security Rules
+5. **使用者體驗**：即時聊天、多圖上傳、圖片去背、翻譯功能
+6. **可擴展性**：模板化設計、服務層抽離、環境變數配置
 
-  2. 建立專案（三步驟）
+---
 
-  步驟 1：輸入專案名稱
-  專案名稱：師聲論壇（或任何你想要的名稱）
+## 未來改進方向
 
-  步驟 2：Google Analytics
-  可以選擇「暫時不啟用」（初學不需要）
+- 圖片改用 Firebase Storage (取代 Base64)
+- 貼文分頁/無限滾動
+- 用戶權限系統 (編輯/刪除自己的貼文)
+- 貼文按讚/收藏功能
+- 進階 RAG (使用 OpenAI Embeddings + 向量資料庫)
+- 搜尋功能 (標題、內容、作者)
+- 通知系統 (被回覆時通知)
+- PWA 支援 (離線存取)
 
-  步驟 3：等待建立完成
-  大約 30 秒，完成後點「繼續」
+---
 
-  3. 新增 Web 應用程式
-
-  進入專案後：
-
-  1. 在專案總覽頁面，點擊 </> 圖示（Web 圖示）
-  2. 輸入應用程式暱稱：師聲論壇-Web
-  3. 不要勾選 Firebase Hosting（我們先不用）
-  4. 點擊「註冊應用程式」
-
-  4. 複製設定檔
-
-  會看到類似這樣的程式碼：
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXX",
-    authDomain: "your-project.firebaseapp.com",
-    projectId: "your-project-id",
-    storageBucket: "your-project.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:xxxxxxxxxxxxx"
-  };
-
-  重要：先複製這段，等下會用到！
-
-  ---
-  🔧 步驟二：啟用 Firebase 服務
-
-  1. 啟用 Authentication（用戶登入）
-
-  在左側選單：
-  1. 點擊「Authentication」→「開始使用」
-  2. 選擇登入方式：
-    - 點擊「電子郵件/密碼」→ 啟用 → 儲存
-    - 點擊「Google」→ 啟用 → 輸入專案支援電子郵件 → 儲存
-
-  2. 啟用 Firestore Database（資料庫）
-
-  在左側選單：
-  1. 點擊「Firestore Database」→「建立資料庫」
-  2. 選擇位置：asia-east1（台灣） 或 asia-northeast1（日本）
-  3. 安全性規則選擇：測試模式（暫時，等下會改）
-  4. 點擊「啟用」
-
-  3. 啟用 Storage（檔案儲存）
-
-  在左側選單：
-  1. 點擊「Storage」→「開始使用」
-  2. 安全性規則選擇：測試模式
-  3. 位置選擇：asia-east1 或 asia-northeast1
-  4. 點擊「完成」
-
-⏺ ---
-  💻 步驟三：將 Firebase 整合到專案
-
-
- IntroduceToTheInternet_FinalProject/
-  ├── 📄 配置檔案
-  │   ├── .gitignore                    # Git 忽略規則
-  │   ├── package.json                  # 前端依賴管理
-  │   ├── package-lock.json             # 依賴鎖定檔
-  │   ├── README.md                     # 專案說明文件
-  │   ├── CLAUDE.md                     # Claude 開發指引
-  │   └── FIREBASE_SETUP_GUIDE.md       # Firebase 設定指南
-  │
-  ├── 📂 public/                        # 靜態資源
-  │   ├── index.html                    # HTML 模板
-  │   ├── logo.png                      # 網站 Logo (1.8MB)
-  │   ├── site_snapshot.html            # 網站快照
-  │   └── images/                       # 圖片資源
-  │
-  ├── 📂 src/                           # 前端原始碼
-  │   ├── index.js                      # React 入口點
-  │   ├── index.css                     # 全局樣式
-  │   ├── App.js                        # 主應用程式組件
-  │   ├── firebase.js                   # Firebase 配置
-  │   │
-  │   ├── 📂 components/                # React 組件
-  │   │   ├── Auth.js                   # 認證組件
-  │   │   ├── Header.js                 # 網站導航列 ⭐
-  │   │   ├── BoardNav.js               # 看板導航
-  │   │   ├── BoardTemplate.js          # 看板模板 (共用)
-  │   │   ├── PostForm.js               # 發文表單
-  │   │   ├── Comment.js                # 單一留言組件
-  │   │   ├── Comments.js               # 留言列表
-  │   │   ├── LoginForm.js              # 登入表單 ⭐
-  │   │   ├── RegistrationForm.js       # 註冊表單 ⭐
-  │   │   ├── MemberCard.js             # 會員卡片
-  │   │   ├── MemberDirectory.js        # 會員目錄
-  │   │   ├── Gallery.js                # 圖片畫廊
-  │   │   └── MediaDisplay.js           # 媒體顯示
-  │   │
-  │   ├── 📂 pages/                     # 頁面組件
-  │   │   ├── HomePage.js               # 首頁
-  │   │   ├── LoginPage.js              # 登入頁
-  │   │   ├── BoardsIndexPage.js        # 看板索引
-  │   │   ├── PostDetailPage.js         # 貼文詳情頁
-  │   │   ├── ProfilePage.js            # 個人檔案頁
-  │   │   ├── ProfileEditPage.js        # 編輯個人檔案
-  │   │   ├── MemberPage.js             # 會員列表頁
-  │   │   ├── MediaPage.js              # 媒體頁
-  │   │   │
-  │   │   └── 📁 看板頁面 (7個)
-  │   │       ├── FoodBoardPage.js      # 美食看板
-  │   │       ├── WeatherBoardPage.js   # 天氣看板
-  │   │       ├── EventsBoardPage.js    # 活動看板
-  │   │       ├── ClubsBoardPage.js     # 社團看板
-  │   │       ├── CoursesBoardPage.js   # 課程看板
-  │   │       ├── OutfitBoardPage.js    # 穿搭看板
-  │   │       └── OtherBoardPage.js     # 其他看板
-  │   │
-  │   ├── 📂 contexts/                  # React Context
-  │   │   └── AuthContext.js            # 認證上下文 ⭐
-  │   │
-  │   └── 📂 services/                  # 服務層
-  │       └── postService.js            # Firestore 貼文服務
-  │
-  ├── 📂 backend/                       # 後端 API 服務
-  │   ├── .env                          # 環境變數 (API Keys) 🔒
-  │   ├── package.json                  # 後端依賴管理
-  │   ├── server.js                     # Express 伺服器
-  │   │   ├── POST /moderation          # 內容審核 API (Perspective API)
-  │   │   └── POST /remove-bg           # 去背 API (Remove.bg)
-  │   └── node_modules/                 # 後端依賴 (本機)
-  │
-  └── 📂 node_modules/                  # 前端依賴 (本機)
-
-  📊 統計資料
-
-  | 類別      | 數量   | 說明                                                   |
-  |---------|------|------------------------------------------------------|
-  | 前端組件    | 13 個 | src/components/                                      |
-  | 頁面      | 15 個 | src/pages/                                           |
-  | 看板      | 7 個  | Food, Weather, Events, Clubs, Courses, Outfit, Other |
-  | Context | 1 個  | AuthContext (認證管理)                                   |
-  | 服務      | 1 個  | postService (Firestore 操作)                           |
-  | 後端 API  | 2 個  | 內容審核 + 圖片去背                                          |
-
-  🔑 關鍵檔案說明
-
-  ⭐ 最近修改的檔案：
-  - src/components/Header.js - 導航列
-  - src/components/LoginForm.js - 登入功能
-  - src/components/RegistrationForm.js - 註冊功能
-  - src/contexts/AuthContext.js - 全局認證狀態管理
-
-  🌐 路由結構
-
-  / -----------------------> HomePage
-  /login -----------------> LoginPage
-  /boards ----------------> BoardsIndexPage
-  /boards/food -----------> FoodBoardPage (使用 BoardTemplate)
-  /boards/weather --------> WeatherBoardPage
-  /boards/events ---------> EventsBoardPage
-  /boards/clubs ----------> ClubsBoardPage
-  /boards/courses --------> CoursesBoardPage
-  /boards/outfit ---------> OutfitBoardPage
-  /boards/other ----------> OtherBoardPage
-  /boards/:boardId/:postId -> PostDetailPage
-  /members ---------------> MemberPage
-  /profile ---------------> ProfilePage
-  /profile/edit ----------> ProfileEditPage
-  /media -----------------> MediaPage
-
-  🔧 技術棧
-
-  - 前端: React, React Router, Firebase (Auth, Firestore, Storage)
-  - 後端: Node.js, Express, Google Perspective API, Remove.bg API
-  - 部署: Backend on Render (https://introducetotheinternet-finalproject-0yrf.onrender.com)
-
-
-
-  🚀 Express 是什麼？
-
-  Express 是 Node.js 最流行的 Web 應用框架，用來建立後端伺服器和 API。
-
-  簡單比喻：
-
-  想像您開一家餐廳：
-  - Node.js = 廚房的設備（爐子、冰箱、刀具）
-  - Express = 餐廳的營運系統（點餐流程、出餐流程、收銀系統）
-
-  Express 幫您處理：
-  - 📥 接收請求 (客人點餐)
-  - 🔄 處理邏輯 (廚師做菜)
-  - 📤 回傳結果 (上菜給客人)
-
-  ---
-  📋 在您的專案中，Express 做了什麼？
-
-  看 backend/server.js，您的 Express 伺服器提供了 2 個 API 端點：
-
-  1️⃣ POST /remove-bg - 圖片去背 API
-
-  app.post("/remove-bg", upload.single("image_file"), async (req, res) => {
-    // 接收前端上傳的圖片
-    // 轉發給 Remove.bg API 進行去背
-    // 回傳去背後的圖片給前端
-  });
-
-  流程：
-  前端上傳圖片
-      ↓
-  Express 接收
-      ↓
-  轉發給 Remove.bg API (使用後端的 API Key)
-      ↓
-  接收去背後的圖片
-      ↓
-  回傳給前端
-
-  為什麼需要後端？
-  - ✅ 保護 API Key（不暴露在前端程式碼中）
-  - ✅ 作為「代理伺服器」(Proxy) 轉發請求
-
-  2️⃣ POST /moderation - 內容審核 API
-
-  app.post("/moderation", async (req, res) => {
-    // 接收前端送來的文字內容
-    // 呼叫 Google Perspective API 檢查是否有不當內容
-    // 回傳審核結果 (是否違規)
-  });
-
-  流程：
-  前端提交文字 (貼文/留言)
-      ↓
-  Express 接收
-      ↓
-  呼叫 Google Perspective API 分析
-      ↓
-  檢查：惡意言論、侮辱、髒話、威脅等
-      ↓
-  回傳結果：{ flagged: true/false, categories: {...} }
-
-  審核項目：
-  - ❌ 惡意言論 (TOXICITY)
-  - ❌ 人身攻擊 (IDENTITY_ATTACK)
-  - ❌ 侮辱性言論 (INSULT)
-  - ❌ 髒話 (PROFANITY)
-  - ❌ 威脅恐嚇 (THREAT)
-
-  ---
-  🔧 Express 的核心概念
-
-  1. 建立伺服器
-
-  const express = require('express');
-  const app = express();  // 建立 Express 應用
-
-  app.listen(3000);  // 在 port 3000 啟動伺服器
-
-  2. 定義路由 (Route)
-
-  // GET 請求
-  app.get('/hello', (req, res) => {
-    res.send('你好！');
-  });
-
-  // POST 請求
-  app.post('/login', (req, res) => {
-    res.json({ success: true });
-  });
-
-  3. 中介軟體 (Middleware)
-
-  app.use(cors());           // 允許跨域請求
-  app.use(express.json());   // 解析 JSON 格式的請求
-
-  ---
-  🌐 您的後端架構圖
-
-  ┌─────────────────────────────────────────────┐
-  │     React 前端 (http://localhost:3000)       │
-  │  - 使用者上傳圖片                             │
-  │  - 使用者發文/留言                            │
-  └──────────────────┬──────────────────────────┘
-                     │ HTTP 請求
-                     ↓
-  ┌─────────────────────────────────────────────┐
-  │  Express 後端 (Render 部署)                  │
-  │  https://introducetotheinternet-...         │
-  │                                              │
-  │  ┌────────────────────────────────────┐    │
-  │  │  POST /remove-bg                    │    │
-  │  │  - 接收圖片                          │    │
-  │  │  - 呼叫 Remove.bg API               │    │
-  │  │  - 回傳去背圖片                       │    │
-  │  └────────────────────────────────────┘    │
-  │                                              │
-  │  ┌────────────────────────────────────┐    │
-  │  │  POST /moderation                   │    │
-  │  │  - 接收文字內容                       │    │
-  │  │  - 呼叫 Google Perspective API      │    │
-  │  │  - 回傳審核結果                       │    │
-  │  └────────────────────────────────────┘    │
-  └──────────────────┬──────────────────────────┘
-                     │
-             ┌───────┴────────┐
-             ↓                ↓
-      Remove.bg API    Google Perspective API
-
-  ---
-  📦 Express 使用的套件
-
-  從 package.json 可以看到：
-
-  | 套件         | 用途                              |
-  |------------|---------------------------------|
-  | express    | Web 框架（核心）                      |
-  | cors       | 允許前端跨域請求                        |
-  | dotenv     | 讀取 .env 環境變數                    |
-  | multer     | 處理檔案上傳                          |
-  | axios      | 發送 HTTP 請求給外部 API               |
-  | googleapis | Google API 客戶端（Perspective API） |
-  | form-data  | 建構表單資料                          |
-
-  ---
-  🎯 為什麼需要 Express 後端？
-
-  ❌ 不用後端的問題：
-
-  // 前端直接呼叫（不安全！）
-  const API_KEY = "abc123xyz"; // ⚠️ 暴露在前端程式碼中！
-  fetch('https://api.remove.bg/v1.0/removebg', {
-    headers: { 'X-Api-Key': API_KEY }  // 任何人都能看到
-  });
-
-  ✅ 使用後端的優點：
-
-  // 前端
-  fetch('https://your-backend.com/remove-bg', {
-    // 不需要 API Key
-  });
-
-  // 後端 (server.js)
-  const API_KEY = process.env.REMOVE_BG_API_KEY; // ✅ 安全存在伺服器
-
-  優點：
-  1. 🔒 保護 API Key - 不會暴露在前端
-  2. 🛡️ 安全控制 - 可以加入驗證、限流等保護
-  3. 🔄 統一管理 - 所有外部 API 呼叫集中管理
-  4. 💰 成本控制 - 避免 API Key 被盜用
-
-  ---
-  🚀 如何啟動您的 Express 後端？
-
-  cd backend
-  node server.js
-
-  啟動後會看到：
-  Server running on http://0.0.0.0:10000
-
-  現在前端就可以呼叫：
-  - POST http://localhost:10000/remove-bg
-  - POST http://localhost:10000/moderation
-
-  ---
-  總結：Express 就是一個幫您輕鬆建立後端 API 伺服器的工具，讓前端可以安全地使用各種第三方服務！ 🎉
-
- 全局語言管理系統
-
-  - ✅ 創建 /src/contexts/LanguageContext.js
-    - 提供全局語言狀態管理
-    - 支援 localStorage 持久化存儲
-    - 預設語言為英文 ('en')
-    - 提供 useLanguage() hook 給所有頁面使用
-  - ✅ 在 App.js 中整合 LanguageProvider
-    - 包裹整個應用，讓所有頁面都能訪問語言設定
-
-  使用 React Context API 進行全局狀態管理
-  - localStorage 實現語言偏好持久化
-  - 所有組件使用 useLanguage() hook 獲取當前語言
-  - 使用三元運算符 language === 'zh' ? '中文' : 'English' 進行條件渲染
-  - 保持所有原有功能和代碼結構不變
-
-
-  RAG 向量知識庫系統實現完成
-
-  ✅ 已完成的文件
-
-  1. backend/knowledge_base.txt - 靜態知識庫文件
-    - 包含 30+ 條知識條目
-    - 涵蓋選課、美食、社團、宿舍、校園、國際交流、就業等主題
-    - 格式：[分類] 問題 | 答案
-  2. backend/server.js (已修改) - 主服務器
-    - 實現文本向量化（TF-IDF）
-    - 實現餘弦相似度計算
-    - 實現 RAG 檢索函數 retrieveFacts()
-    - 新增測試端點 /api/rag-test
-    - 新增健康檢查端點 /api/health
-    - 自動載入知識庫
-  3. backend/test_rag.js - 測試腳本
-    - 完整的測試套件
-    - 支援單個問題測試
-    - 健康檢查功能
-  4. backend/RAG_README.md - 詳細技術文檔
-    - 系統架構說明
-    - API 文檔
-    - 向量化原理解釋
-    - 調優建議
-  5. backend/QUICK_START.md - 快速開始指南
-    - 一步步使用說明
-    - 範例代碼
-    - 常見問題解答
-
-  🔄 工作流程（如您要求）
-
-  使用者問題
-      │
-      ▼
-  [1] textToVector() 轉成向量 (queryVector)
-      │
-      ▼
-  [2] 與知識庫中每條知識計算餘弦相似度
-      │
-      ▼
-  [3] 按相似度排序
-      │
-      ▼
-  [4] 過濾低分結果（閾值 > 0.1）
-      │
-      ▼
-  [5] 取前 topK 條（預設 3 條）
-      │
-      ▼
-  [6] 返回最相關的答案給 LLM
-
-  🚀 立即測試
-
-  # 1. 啟動服務器
-  cd backend
-  node server.js
-
-  # 2. 在另一個終端執行測試
-  node test_rag.js
-
-  # 或測試單個問題
-  node test_rag.js 選課有哪些階段？
-
-  📝 使用範例
-
-  // 在你的 AI 對話中使用
-  const facts = retrieveFacts("選課有哪些規定？", null, 3);
-
-  // facts 會包含最相關的 3 條答案
-  // 將這些答案整合到 LLM 的提示詞中即可
-
-  🎯 特點
-
-  - ✅ 無需外部 API - 使用內建的 TF-IDF 向量化
-  - ✅ 支援中文 - 針對中文優化的分詞處理
-  - ✅ 自動載入 - 服務器啟動時自動載入知識庫
-  - ✅ 易於擴展 - 簡單編輯 txt 文件即可添加知識
-  - ✅ 實時檢索 - 毫秒級響應速度
-  - ✅ 詳細日誌 - Console 顯示檢索結果和相似度分數
-
-  📊 檢索效果範例
-
-  當用戶問「選課有什麼規定？」時：
-  🔍 檢索到 3 條相關知識:
-    1. [Academic] 相似度: 0.456 - 選課有哪些階段？
-    2. [Academic] 相似度: 0.342 - 什麼是衝堂？
-    3. [Academic] 相似度: 0.287 - 通識課程如何選課？
+## 開發者注意事項
+
+### 修改知識庫
+
+編輯 `backend/knowledge_base.txt`，格式：
+
+```
+[分類] 問題 | 答案
+```
+
+重啟伺服器後自動載入。
+
+### 調整內容審核敏感度
+
+編輯 `backend/server.js` 第 216 行：
+
+```javascript
+const THRESHOLD = 0.5;  // 降低 = 更嚴格，提高 = 更寬鬆
+```
+
+### 新增板塊
+
+1. 建立頁面組件 (如 `NewBoardPage.js`)
+2. 渲染 `<BoardTemplate boardName="新板塊" />`
+3. 在 `App.js` 加入路由
+4. 在 `BoardNav.js` 加入導航連結
+
+---
+
+

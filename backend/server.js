@@ -86,7 +86,7 @@ function loadKnowledgeBase() {
 }
 
 /**
- * 簡易中文分詞（基於字符）
+ * 分詞 Tokenization
  */
 function simpleTokenize(text) {
     // 移除標點符號
@@ -114,7 +114,7 @@ function simpleTokenize(text) {
 function computeTF(tokens) {
     const tf = {};
     const totalTokens = tokens.length;
-
+    // 計數
     for (const token of tokens) {
         tf[token] = (tf[token] || 0) + 1;
     }
@@ -150,13 +150,14 @@ function cosineSimilarity(vec1, vec2) {
         const v1 = vec1[key] || 0;
         const v2 = vec2[key] || 0;
 
-        dotProduct += v1 * v2;
-        mag1 += v1 * v1;
-        mag2 += v2 * v2;
+        dotProduct += v1 * v2; // 點積
+        mag1 += v1 * v1;       // 向量1長度平方
+        mag2 += v2 * v2;       // 向量2長度平方
     }
 
     if (mag1 === 0 || mag2 === 0) return 0;
-
+    
+    // 餘弦相似度 = 點積 / (長度1 * 長度2)
     return dotProduct / (Math.sqrt(mag1) * Math.sqrt(mag2));
 }
 

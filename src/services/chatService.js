@@ -38,7 +38,7 @@ import { db } from '../firebase';
  */
 export const listenToChatMessages = (boardName, callback) => {
   try {
-    console.log('💬 開始監聽【' + boardName + '】聊天室...');
+    console.log(' 開始監聽【' + boardName + '】聊天室...');
 
     // 1. 建立查詢：取得指定看板的訊息，按時間排序
     const messagesRef = collection(db, 'chatMessages');
@@ -63,17 +63,17 @@ export const listenToChatMessages = (boardName, callback) => {
         });
       });
 
-      console.log('✅ 收到【' + boardName + '】聊天室的 ' + messages.length + ' 則訊息');
+      console.log(' 收到【' + boardName + '】聊天室的 ' + messages.length + ' 則訊息');
       callback(messages);
     }, (error) => {
-      console.error('❌ 監聽聊天訊息時發生錯誤:', error);
+      console.error(' 監聽聊天訊息時發生錯誤:', error);
       callback([]);
     });
 
     return unsubscribe;
 
   } catch (error) {
-    console.error('❌ 設定聊天訊息監聽時發生錯誤:', error);
+    console.error(' 設定聊天訊息監聽時發生錯誤:', error);
     return () => {};
   }
 };
@@ -114,11 +114,11 @@ export const sendChatMessage = async (messageData) => {
     // 新增到 Firestore
     const docRef = await addDoc(collection(db, 'chatMessages'), newMessage);
 
-    console.log('✅ 聊天訊息已發送，ID:', docRef.id);
+    console.log(' 聊天訊息已發送，ID:', docRef.id);
     return docRef.id;
 
   } catch (error) {
-    console.error('❌ 發送聊天訊息時發生錯誤:', error);
+    console.error(' 發送聊天訊息時發生錯誤:', error);
     throw error;
   }
 };
@@ -149,7 +149,7 @@ export const cleanupExpiredMessages = async () => {
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
-      console.log('✅ 沒有需要清理的過期訊息');
+      console.log(' 沒有需要清理的過期訊息');
       return 0;
     }
 
@@ -161,11 +161,11 @@ export const cleanupExpiredMessages = async () => {
 
     await Promise.all(deletePromises);
 
-    console.log('✅ 已清理 ' + snapshot.size + ' 則過期訊息');
+    console.log(' 已清理 ' + snapshot.size + ' 則過期訊息');
     return snapshot.size;
 
   } catch (error) {
-    console.error('❌ 清理過期訊息時發生錯誤:', error);
+    console.error(' 清理過期訊息時發生錯誤:', error);
     throw error;
   }
 };
