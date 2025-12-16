@@ -1,5 +1,7 @@
 # 師聲 NTNU talk
 
+[YT vedio](https://youtu.be/tqccO33s4qU)
+
 ## 技術架構詳解
 
 ### 前端技術棧
