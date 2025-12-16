@@ -2,7 +2,7 @@
 
 [YT vedio](https://youtu.be/tqccO33s4qU)
 
-## 技術架構詳解
+## 技術架構
 
 ### 前端技術棧
 
