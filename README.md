@@ -1,66 +1,4 @@
-# 師聲 (Teacher's Voice) - 師大校園論壇系統
-
-> 一個結合 React + Firebase + AI 聊天機器人的現代化校園論壇平台
-
-## 專案簡介
-
-「師聲」是一個專為台灣師範大學設計的校園論壇系統，提供學生討論美食、天氣、活動、社團、課程等主題的互動平台。系統整合了即時聊天、AI 智能助手、內容審核、圖片去背等功能，打造完整的校園社群體驗。
-
-### 核心功能
-
-- 用戶認證系統：Email/Password 與 Google OAuth 登入
-- 多板塊論壇：美食、天氣、活動、社團、課程、穿搭、其他
-- 即時聊天室：每個板塊獨立的 Firebase 即時聊天功能
-- AI 智能助手：整合 Google Gemini + RAG 知識庫，提供校園資訊問答
-- 圖片處理：多圖上傳、圖片去背功能
-- 內容審核：使用 Google Perspective API 自動偵測不當內容
-- 翻譯功能：支援貼文多語言翻譯
-- 會員系統：個人資料、頭像、自我介紹
-
----
-
-## 系統架構總覽
-
-```
-┌────────────────────────────────────────────────────────────────┐
-│                        使用者瀏覽器                              │
-│                                                                │
-│  ┌──────────────────────────────────────────────────────┐     │
-│  │              前端 (React 18.2.0)                      │     │
-│  │  • React Router (路由管理)                             │     │
-│  │  • Context API (全局狀態管理)                          │     │
-│  │  • Firebase SDK (客戶端)                              │     │
-│  └──────────────┬────────────────┬──────────────────────┘     │
-└─────────────────┼────────────────┼─────────────────────────────┘
-                  │                │
-                  │                │
-        ┌─────────▼────────┐  ┌───▼──────────────────────┐
-        │  Firebase 服務    │  │  Node.js + Express 後端   │
-        │  (Google Cloud)  │  │  (Render 託管)            │
-        ├──────────────────┤  ├──────────────────────────┤
-        │ • Firestore DB   │  │ API 端點:                 │
-        │ • Authentication │  │  /moderation             │
-        │ • Storage        │  │  /remove-bg              │
-        └──────────────────┘  │  /chat                   │
-                              │  /api/translate          │
-                              │  /api/health             │
-                              │                          │
-                              │ RAG 知識庫系統:           │
-                              │  • knowledge_base.txt    │
-                              │  • 向量檢索邏輯           │
-                              └────────┬─────────────────┘
-                                       │
-                      ┌────────────────┴────────────────┐
-                      │         外部 API 服務            │
-                      ├─────────────────────────────────┤
-                      │ • Google Perspective API (審核) │
-                      │ • Remove.bg API (圖片去背)       │
-                      │ • Google Gemini API (AI 聊天)   │
-                      │ • MyMemory Translation API      │
-                      └─────────────────────────────────┘
-```
-
----
+# 師聲 NTNU talk
 
 ## 技術架構詳解
 
@@ -169,7 +107,7 @@ backend/
        │
        ▼
 ┌────────────────────┐
-│  前端 PostForm.js  │
+│  前端 PostForm.js   │
 └──────┬─────────────┘
        │
        ├─ Step 1: 圖片去背 (可選)
@@ -220,26 +158,26 @@ Body: { message: "師大有什麼好吃的？", role: "gentle" }
        │
        ▼
 ┌─────────────────────────────────┐
-│  後端 RAG 系統處理               │
+│  後端 RAG 系統處理                 │
 ├─────────────────────────────────┤
-│ Step 1: 文字向量化               │
+│ Step 1: 文字向量化                │
 │  simpleTokenize()               │
-│  → ["師","大","有","什","麼"...] │
+│  → ["師","大","有","什","麼"...]  │
 │  textToVector()                 │
 │  → { "師": 0.125, "大": 0.125... }│
 │                                 │
-│ Step 2: 知識庫檢索               │
-│  與 34 條知識計算相似度           │
+│ Step 2: 知識庫檢索                │
+│  與 34 條知識計算相似度             │
 │  cosineSimilarity()             │
-│  → 找到前 3 條最相關知識：         │
+│  → 找到前 3 條最相關知識：          │
 │     1. [Food] 師大有什麼必吃美食？│
 │     2. [Food] 師大有什麼甜點推薦？│
 │     3. [Food] 師大有什麼平價小吃？│
 │                                 │
 │ Step 3: 生成 Prompt              │
-│  角色設定：溫柔學姊               │
-│  檢索到的知識：[上述 3 條]        │
-│  使用者問題：師大有什麼好吃的？    │
+│  角色設定：溫柔學姊                 │
+│  檢索到的知識：[上述 3 條]          │
+│  使用者問題：師大有什麼好吃的？       │
 └─────────────┬───────────────────┘
               │
               ▼
@@ -261,7 +199,7 @@ model: "gemini-2.5-flash"
        │
        ▼
 ┌──────────────────────────┐
-│  ChatWidget.js 掛載      │
+│  ChatWidget.js 掛載       │
 └────────┬─────────────────┘
          │
          ├─ useEffect 設定監聽器
@@ -363,114 +301,10 @@ model: "gemini-2.5-flash"
 
 ---
 
-## 安裝與執行
 
-### 前置需求
+## 組件說明
 
-- Node.js 16+
-- npm 或 yarn
-- Firebase 專案 (已配置)
-- 各項 API Keys (見環境變數配置)
-
-### 前端安裝與啟動
-
-```bash
-# 安裝依賴
-npm install
-
-# 啟動開發伺服器
-npm start
-
-# 開啟瀏覽器
-# http://localhost:3000
-```
-
-### 後端安裝與啟動
-
-```bash
-# 進入後端目錄
-cd backend
-
-# 安裝依賴
-npm install
-
-# 創建 .env 檔案（見下方環境變數配置）
-touch .env
-
-# 啟動後端伺服器
-node server.js
-
-# 伺服器運行在
-# http://localhost:10000
-```
-
----
-
-## 環境變數配置
-
-### 後端 .env 檔案
-
-```bash
-# Google Perspective API (內容審核)
-PERSPECTIVE_API_KEY=your_perspective_api_key
-
-# Remove.bg API (圖片去背)
-REMOVE_BG_API_KEY=your_removebg_api_key
-
-# Google Gemini API (AI 聊天)
-GEMINI_API_KEY=your_gemini_api_key
-
-# 伺服器設定
-PORT=10000
-NODE_ENV=production
-```
-
-### 前端 Firebase 配置
-
-已配置在 `src/firebase.js`：
-
-```javascript
-const firebaseConfig = {
-  apiKey: "AIzaSyCwWX...",
-  authDomain: "ntnu-talk.firebaseapp.com",
-  projectId: "ntnu-talk",
-  storageBucket: "ntnu-talk.firebasestorage.app",
-  messagingSenderId: "851424068343",
-  appId: "1:851424068343:web:..."
-};
-```
-
----
-
-## 測試
-
-### RAG 知識庫測試
-
-```bash
-cd backend
-
-# 執行完整測試套件
-node test_rag.js
-
-# 測試單個問題
-node test_rag.js 師大有什麼好吃的？
-```
-
-### 健康檢查
-
-```bash
-# 本地測試
-curl http://localhost:10000/api/health
-
-# 正式環境測試
-curl https://introducetotheinternet-finalproject-0yrf.onrender.com/api/health
-```
-
----
-
-## 核心組件說明
-
-### 前端核心組件
+### 前端組件
 
 #### AuthContext.js - 全局認證狀態管理
 
@@ -570,60 +404,4 @@ curl https://introducetotheinternet-finalproject-0yrf.onrender.com/api/health
 - 威脅恐嚇 (THREAT)
 
 **閾值**：0.5 (可在 server.js 調整)
-
----
-
-## 專案亮點
-
-1. **前後端分離架構**：React 前端 + Node.js 後端 + Firebase BaaS
-2. **即時同步**：Firestore onSnapshot 實現即時更新
-3. **AI 整合**：Gemini + 自建 RAG 知識庫
-4. **安全性**：內容審核、API Key 隔離、Firebase Security Rules
-5. **使用者體驗**：即時聊天、多圖上傳、圖片去背、翻譯功能
-6. **可擴展性**：模板化設計、服務層抽離、環境變數配置
-
----
-
-## 未來改進方向
-
-- 圖片改用 Firebase Storage (取代 Base64)
-- 貼文分頁/無限滾動
-- 用戶權限系統 (編輯/刪除自己的貼文)
-- 貼文按讚/收藏功能
-- 進階 RAG (使用 OpenAI Embeddings + 向量資料庫)
-- 搜尋功能 (標題、內容、作者)
-- 通知系統 (被回覆時通知)
-- PWA 支援 (離線存取)
-
----
-
-## 開發者注意事項
-
-### 修改知識庫
-
-編輯 `backend/knowledge_base.txt`，格式：
-
-```
-[分類] 問題 | 答案
-```
-
-重啟伺服器後自動載入。
-
-### 調整內容審核敏感度
-
-編輯 `backend/server.js` 第 216 行：
-
-```javascript
-const THRESHOLD = 0.5;  // 降低 = 更嚴格，提高 = 更寬鬆
-```
-
-### 新增板塊
-
-1. 建立頁面組件 (如 `NewBoardPage.js`)
-2. 渲染 `<BoardTemplate boardName="新板塊" />`
-3. 在 `App.js` 加入路由
-4. 在 `BoardNav.js` 加入導航連結
-
----
-
 
